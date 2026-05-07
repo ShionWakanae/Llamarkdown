@@ -108,8 +108,36 @@ def build_highlighted_markdown(content, hits):
             # avoid empty line highlight issue
             if line.strip():
                 if line.lstrip().startswith("|"):
-                    output.append(line)
+                    parts = line.split("|")
+                    # 保留原始结构，包括首尾的空字符串
+                    is_separator = False
 
+                    # 检查是否为分隔行（如 | --- | --- |）
+                    if len(parts) > 2:  # 至少有 3 个部分（首空 + 内容 + 尾空）
+                        # 检查非空单元格是否都是分隔符格式
+                        non_empty_cells = [p for p in parts if p.strip()]
+                        is_separator = all(
+                            all(ch in "- " for ch in cell.strip())
+                            and "-" in cell.strip()
+                            for cell in non_empty_cells
+                            if cell.strip()
+                        )
+
+                    if is_separator:
+                        # 分隔行，保持原样
+                        output.append(line)
+                    else:
+                        # 数据行，高亮每个单元格内容
+                        result_parts = ["|"]  # 开头
+                        for i, cell in enumerate(parts[1:-1], 1):  # 跳过首尾空字符串
+                            stripped = cell.strip()
+                            if stripped:
+                                result_parts.append(f" =={stripped}== |")
+                            else:
+                                result_parts.append(" |")
+                        # 不需要额外加尾部的 |
+                        marked_line = "".join(result_parts)
+                        output.append(marked_line)
                 else:
                     output.append(f"=={line}==")
             else:
@@ -313,23 +341,26 @@ def main():
                 """
             )
 
-    with (
-        ui.column()
-        .classes("w-full no-wrap")
-        .style(
-            """
-            height: 100vh;
-            max-width: 1440px;
-            margin: 0 auto;
-            padding: 4px;
-            gap: 4px;
-            overflow: hidden;
-            """
-        )
+    with ui.column().classes(
+        "w-full h-screen max-w-7xl mx-auto px-2 py-1 gap-0 overflow-hidden"
     ):
-        ui.label("🔍企业知识库").style(
-            "height: 20px; line-height: 20px; font-size: 18px; margin: 0;"
-        )
+        with ui.row().classes("w-full items-center justify-between mt-0 mb-0"):
+            with ui.row().classes("items-center gap-4 mt-0 mb-0"):
+                with ui.row().classes("items-center gap-0 mt-0 mb-0"):
+                    ui.icon("database").props("size=medium")
+                    ui.label("企业知识库").style("font-size: 16px; font-weight: 600;")
+                quick_questions = [
+                    "什么是数据质量保障?",
+                    "IMSI和MSISDN和IMPI和IMPU的关系?",
+                    "华为HSS数据有哪些类型和格式?",
+                    "STNSR",
+                    "SRVCC",
+                ]
+                for q in quick_questions:
+                    ui.button(q, on_click=lambda msg=q: send_message(msg)).props(
+                        "flat dense size=sm"
+                    )
+            ui.label("ver 0.0.4").style("font-size: 12px; color: #888;")
 
         scroll_btn = (
             ui.button(
@@ -339,14 +370,15 @@ def main():
             .classes("scroll-to-bottom-btn")
             .props("round fab")
             .style("""
-            position: absolute;
-            bottom: 160px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: none;
-            z-index: 10;
-            opacity: 0.8;       
-        """)
+                position: absolute;
+                bottom: 160px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: none;
+                z-index: 10;
+                opacity: 0.8;
+                transition: opacity 0.3s;
+            """)
         )
 
         with (
