@@ -248,6 +248,90 @@ LLM回答可能遗漏信息。
 
 ---
 
+# 4.4 Query Routing架构
+
+系统不是：
+
+“所有问题直接进入RAG”。
+
+而是：
+
+多阶段查询路由系统。
+
+当前流程：
+
+    User Question
+        ↓
+    Dict Routing
+        ↓
+    Dict Match ?
+      ├─ Yes → Dict Direct Answer
+      │          ↓
+      │     User Confirm RAG
+      │
+      └─ No → RAG Retrieval
+
+---
+
+## Dict优先
+
+对于：
+
+- 缩写
+- 字段
+- 通信术语
+- 名词解释
+
+Dict系统优先。
+
+原因：
+
+- 延迟更低
+- 更精确
+- 不依赖Embedding
+- 不依赖LLM理解
+
+---
+
+## 用户决定是否继续RAG
+
+Dict命中后：
+
+不代表问题结束。
+
+用户可能还需要：
+
+- 深入解释
+- 历史版本
+- 配置方法
+- 关联功能
+- 原始文档
+
+因此：
+
+必须允许：
+
+Dict → RAG
+
+二阶段查询。
+
+---
+
+## Query Routing属于核心能力
+
+后续允许扩展：
+
+- Dict Routing
+- RAG Routing
+- Metadata Routing
+- OCR Routing
+- SQL Routing
+- Tool Routing
+
+禁止：
+
+“所有问题统一走LLM”。
+
 # 5. Markdown解析规则
 
 ## 5.1 Heading-Aware Parsing
@@ -557,6 +641,75 @@ RAG不是：
 
 ---
 
+## 8.5 Retrieval结果必须可解释
+
+系统必须尽量展示：
+
+- score
+- file_name
+- header_path
+- line_start
+- line_end
+- block_type
+
+原因：
+
+Retrieval本身：
+
+可能出错。
+
+用户和开发者必须：
+
+- 理解为什么命中
+- 理解为什么没命中
+- 理解为什么排序靠前
+- 判断是否需要调整chunk
+
+---
+
+### Retrieval Debug属于核心功能
+
+Debug信息不仅是开发期临时功能。
+
+而是：
+
+Retrieval系统长期可观测性能力。
+
+后续允许扩展：
+
+- rerank score
+- retrieval stage
+- rewrite query
+- retrieval source
+- vector / bm25来源
+- routing trace
+
+## 8.6 Retrieval结果可能包含噪声
+
+企业知识库中：
+
+retrieval结果可能：
+
+- 存在重复
+- 存在历史遗留
+- 存在旧版本
+- 存在相似字段
+- 存在错误文档
+
+因此：
+
+source_nodes不是“真理”。
+
+而是：
+
+“高概率相关上下文”。
+
+LLM必须：
+
+- 尽量基于上下文回答
+- 不确定时明确说明
+- 避免过度推断
+
 # 9. Prompt设计规则
 
 ## 9.1 禁止模型编造
@@ -615,6 +768,54 @@ Prompt必须：
 
 ---
 
+## 9.4 Streaming输出规则
+
+系统采用streaming输出。
+
+原因：
+
+- 降低等待焦虑
+- 提高交互体验
+- 更适合长回答
+- 更适合企业文档问答
+
+---
+
+## Streaming属于UI与LLM协同能力
+
+Streaming不仅是：
+
+“逐字输出”。
+
+还包括：
+
+- loading状态
+- retrieval等待状态
+- token状态
+- source_nodes状态
+- debug状态
+- 最终status状态
+
+---
+
+## Streaming事件必须结构化
+
+当前事件包括：
+
+- token
+- sources
+- debug
+- status
+
+后续允许扩展：
+
+- retrieval_start
+- retrieval_end
+- rerank
+- rewrite
+- warning
+- citation
+- 
 # 10. Dict系统规则
 
 ## 10.1 英文缩写必须严格匹配
@@ -777,7 +978,100 @@ Prompt必须：
 UI不能只关注聊天体验。
 
 ---
+## 11.5 Debug面板属于核心功能
 
+Debug Panel不是开发临时功能。
+
+而是：
+
+企业RAG的重要组成部分。
+
+必须允许查看：
+
+- retrieval结果
+- score
+- metadata
+- token usage
+- timing
+- routing情况
+
+---
+
+## 企业RAG必须可观测
+
+企业RAG问题：
+
+往往不是：
+
+“模型不会回答”。
+
+而是：
+
+- 没召回
+- 召回错了
+- metadata错误
+- chunk切坏了
+- rerank错误
+
+因此：
+
+可观测性非常重要。
+
+## 11.6 Timing与Token Usage规则
+
+系统必须尽量统计：
+
+- query_ms
+- llm_ms
+- total_ms
+- token usage
+
+原因：
+
+企业RAG：
+
+不只是“能回答”。
+
+还需要：
+
+- 性能可观测
+- 成本可观测
+- 模型行为可观测
+
+---
+
+### 必须区分不同阶段Token
+
+当前至少区分：
+
+- rewrite
+- answer
+
+后续允许扩展：
+
+- rerank
+- summarize
+- planner
+- tool
+
+---
+
+### Token来源必须可见
+
+系统必须尽量区分：
+
+- 来自LLM
+- 来自Cache
+- 来自Fallback
+
+原因：
+
+不同来源：
+
+- 成本不同
+- 延迟不同
+- 质量不同
+- 
 # 12. 历史设计决策
 
 ## 12.1 为什么不用默认Splitter
@@ -853,6 +1147,31 @@ LLM：
 
 ---
 
+## 12.5 为什么必须保留source_nodes
+
+source_nodes属于：
+
+Retrieval grounding核心数据。
+
+不只是：
+
+“调试信息”。
+
+它还用于：
+
+- 原文展示
+- Citation
+- 用户验证
+- Retrieval分析
+- rerank分析
+- chunk质量分析
+
+禁止：
+
+- retrieval后立即丢弃source_nodes
+- 只保留最终LLM回答
+
+
 # 13. 禁止的错误优化
 
 禁止：
@@ -888,6 +1207,30 @@ LLM：
 - 改写核心流程
 
 ---
+
+## 13.1 禁止隐藏Retrieval过程
+
+禁止：
+
+- 完全隐藏命中文档
+- 完全隐藏score
+- 完全隐藏metadata
+- 只展示“AI最终答案”
+
+原因：
+
+企业用户：
+
+通常更关心：
+
+- 数据来源
+- 文档出处
+- 是否可信
+
+而不是：
+
+“AI说了什么”。
+
 
 # 14. AI协作规则
 
@@ -950,6 +1293,43 @@ AI必须：
 禁止轻易替换。
 
 ---
+
+## 14.4 Service层属于状态编排层
+
+Service层不仅是：
+
+“简单函数调用”。
+
+它负责：
+
+- Query Routing
+- Streaming状态
+- Retrieval状态
+- Debug数据
+- Token Usage
+- 最终状态事件
+
+属于：
+
+RAG系统状态编排层。
+
+禁止：
+
+- 将所有逻辑直接塞入UI
+- 将所有逻辑直接塞入Engine
+- UI直接操作底层retrieval
+
+原因：
+
+后续：
+
+- CLI
+- WebUI
+- API
+- Agent
+
+可能共享同一Service层。
+
 
 # 15. 后续规划
 
