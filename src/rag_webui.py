@@ -71,7 +71,8 @@ def read_file_by_path(path):
 def build_highlighted_markdown(content, hits):
 
     lines = content.splitlines()
-
+    output = []
+    first_hit_done = False
     # merge intervals
     normalized_hits = []
     for start, end in sorted(hits):
@@ -132,14 +133,24 @@ def build_highlighted_markdown(content, hits):
                         for i, cell in enumerate(parts[1:-1], 1):  # 跳过首尾空字符串
                             stripped = cell.strip()
                             if stripped:
-                                result_parts.append(f" =={stripped}== |")
+                                if not first_hit_done:
+                                    result_parts.append(
+                                        f' <mark id="first-hit">{stripped}</mark> |'
+                                    )
+                                    first_hit_done = True
+                                else:
+                                    result_parts.append(f" <mark>{stripped}</mark> |")
                             else:
                                 result_parts.append(" |")
                         # 不需要额外加尾部的 |
                         marked_line = "".join(result_parts)
                         output.append(marked_line)
                 else:
-                    output.append(f"=={line}==")
+                    if not first_hit_done:
+                        output.append(f'<mark id="first-hit">{line}</mark>')
+                        first_hit_done = True
+                    else:
+                        output.append(f"<mark>{line}</mark>")
             else:
                 output.append(line)
 
@@ -276,6 +287,15 @@ def main():
                         width: 160px;
                         """
                     )
+                ui.run_javascript("""
+                setTimeout(() => {
+                    document.getElementById("first-hit")
+                        ?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "center"
+                        });
+                }, 100);
+                """)
 
         dialog.open()
 
