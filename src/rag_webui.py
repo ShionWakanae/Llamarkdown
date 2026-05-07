@@ -221,8 +221,8 @@ def main():
                 container.clear()
                 container.delete()
 
-            ui.button("是", on_click=on_yes).props("dense size=sm icon='check'")
             ui.button("否", on_click=on_no).props("flat dense size=sm icon='close'")
+            ui.button("是", on_click=on_yes).props("dense size=sm icon='check'")
 
     def show_file_preview(name, path, hits):
 
@@ -381,7 +381,7 @@ def main():
     ):
         with ui.row().classes("w-full items-center justify-between mt-0 mb-0"):
             with ui.row().classes("items-center gap-4 mt-0 mb-0"):
-                with ui.row().classes("items-center gap-0 mt-0 mb-0"):
+                with ui.row().classes("items-center gap-0 mt-0 mb-0 ml-4"):
                     ui.icon("database").props("size=medium")
                     ui.label("企业知识库").style("font-size: 16px; font-weight: 600;")
                 quick_questions = [
@@ -395,7 +395,9 @@ def main():
                     ui.button(q, on_click=lambda msg=q: send_message(msg)).props(
                         "flat dense size=sm"
                     )
-            ui.label("ver 0.0.4").style("font-size: 12px; color: #888;")
+            ui.label("ver 0.0.4").style(
+                "font-size: 12px; color: #888; margin-right: 12px;"
+            )
 
         (
             ui.button(
@@ -403,16 +405,15 @@ def main():
                 on_click=lambda: context.client.run_javascript("scrollToBottom()"),
             )
             .classes("scroll-to-bottom-btn")
-            .props("round fab")
+            .props("round")
             .style("""
                 position: absolute;
                 bottom: 160px;
                 left: 50%;
                 transform: translateX(-50%);
-                display: none;
-                z-index: 10;
-                opacity: 0.8;
-                transition: opacity 0.3s;
+                z-index: 100;
+                opacity: 0.0;
+                transition: opacity 0.5s;
             """)
         )
 
@@ -627,7 +628,7 @@ def main():
                                 )
 
                             sources_container = ui.row().classes("gap-0 mt-0 mb-0")
-                            action_container = ui.row().classes("gap-0 mt-0 mb-0")
+                            action_container = ui.row().classes("gap-2 mt-0 mb-0")
                             auto_scroll_chat(client)
 
                     # reset status
@@ -765,7 +766,7 @@ def main():
                     atime = f"🕐{datetime.datetime.now().strftime('%H:%M:%S')}"
                     partial_text += f"""
                         <div style="text-align:right; font-size:12px; color:#888888 !important;">
-                        {atime}
+                        ⚡{timing.get("total_ms", 0)}ms &nbsp;&nbsp;&nbsp;&nbsp; {atime}
                         </div>
                     """
                     rendered_html = render_markdown_html(partial_text)
@@ -821,9 +822,12 @@ def main():
 
                 except Exception as e:
                     partial_text += f"  \n  \n  `📛出现了错误：{str(e)}`！"
-                    partial_text += (
-                        f"  \n  \n  `🕐{datetime.datetime.now().strftime('%H:%M:%S')}`"
-                    )
+                    atime = f"🕐{datetime.datetime.now().strftime('%H:%M:%S')}"
+                    partial_text += f"""
+                        <div style="text-align:right; font-size:12px; color:#888888 !important;">
+                        {atime}
+                        </div>
+                    """
                     rendered_html = render_markdown_html(partial_text)
                     log(e)
                     print(traceback.format_exc())
