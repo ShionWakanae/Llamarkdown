@@ -391,7 +391,7 @@ class RagEngine:
         lli_Settings.embed_model = HuggingFaceEmbedding(
             model_name=os.getenv("EMBEDDING_MODEL"),
             device="cuda",
-            embed_batch_size=32,
+            embed_batch_size=8,
         )
 
     def _build_pipeline(self):
