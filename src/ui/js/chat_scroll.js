@@ -41,7 +41,7 @@
         area.addEventListener('scroll', checkScroll, {
             passive: true
         });
-    scrollBound=true;
+        scrollBound=true;
     }
 
     function observeChatArea() {
@@ -59,7 +59,7 @@
             subtree: true
         });
 
-    observerBound=true;
+        observerBound=true;
     }
 
     function initWhenReady(retry=0) {
@@ -82,7 +82,7 @@
     // 页面加载后启动
     document.addEventListener('DOMContentLoaded', ()=> {
             initWhenReady();
-        });
+    });
 
     // 暴露给 Python 调用（保持兼容）
     window.scrollToBottom=scrollToBottom;
