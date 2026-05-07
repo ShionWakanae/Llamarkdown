@@ -362,7 +362,7 @@ def main():
                     )
             ui.label("ver 0.0.4").style("font-size: 12px; color: #888;")
 
-        scroll_btn = (
+        (
             ui.button(
                 icon="keyboard_arrow_down",
                 on_click=lambda: context.client.run_javascript("scrollToBottom()"),
