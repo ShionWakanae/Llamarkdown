@@ -265,7 +265,22 @@ def main():
                     """
                 )
 
-                ui.markdown(f"### 《{name}》")
+                ui.html(f"""
+                <div>
+                    <div style="font-size:20px;font-weight:600;">
+                        《{name}》
+                    </div>
+
+                    <div style="
+                        color:#888;
+                        font-size:12px;
+                        margin-top:6px;
+                        margin-left:12px;
+                    ">
+                        智能助手回答时参考了本文档的 {len(hits)} 段内容，参考文本见高亮区域。
+                    </div>
+                </div>
+                """)
 
                 ui.html(highlighted_html).classes("w-full").style(
                     """
