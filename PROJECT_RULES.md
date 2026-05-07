@@ -781,7 +781,7 @@ Prompt必须：
 
 ---
 
-## Streaming属于UI与LLM协同能力
+### Streaming属于UI与LLM协同能力
 
 Streaming不仅是：
 
@@ -798,7 +798,7 @@ Streaming不仅是：
 
 ---
 
-## Streaming事件必须结构化
+### Streaming事件必须结构化
 
 当前事件包括：
 
@@ -921,7 +921,32 @@ Streaming不仅是：
 
 # 11. UI设计规则
 
-## 11.1 调试信息必须可见
+## 11.1 UI核心目标
+
+WebUI不是：
+
+“普通聊天界面”。
+
+而是：
+
+RAG信息展示终端。
+
+UI核心目标：
+
+- 展示retrieval结果
+- 展示原文来源
+- 展示debug信息
+- 展示文档结构
+- 展示citation关系
+- 帮助用户阅读原文
+
+而不是：
+
+- 模拟真人聊天
+- 情感交互
+- 社交体验
+
+## 11.2 调试信息必须可见
 
 必须支持：
 
@@ -940,7 +965,7 @@ Streaming不仅是：
 
 ---
 
-## 11.2 输入框必须固定可见
+## 11.3 输入框必须固定可见
 
 页面布局：
 
@@ -954,7 +979,7 @@ Streaming不仅是：
 
 ---
 
-## 11.3 自动滚动
+## 11.4 自动滚动
 
 新消息时：
 
@@ -963,7 +988,7 @@ Streaming不仅是：
 
 ---
 
-## 11.4 原文阅读体验非常重要
+## 11.5 原文阅读体验非常重要
 
 用户需要：
 
@@ -978,7 +1003,7 @@ Streaming不仅是：
 UI不能只关注聊天体验。
 
 ---
-## 11.5 Debug面板属于核心功能
+## 11.6 Debug面板属于核心功能
 
 Debug Panel不是开发临时功能。
 
@@ -997,7 +1022,7 @@ Debug Panel不是开发临时功能。
 
 ---
 
-## 企业RAG必须可观测
+### 企业RAG必须可观测
 
 企业RAG问题：
 
@@ -1017,7 +1042,7 @@ Debug Panel不是开发临时功能。
 
 可观测性非常重要。
 
-## 11.6 Timing与Token Usage规则
+## 11.7 Timing与Token Usage规则
 
 系统必须尽量统计：
 
@@ -1071,7 +1096,291 @@ Debug Panel不是开发临时功能。
 - 成本不同
 - 延迟不同
 - 质量不同
-- 
+
+
+## 11.8 Source展示规则
+
+source_nodes属于核心信息。
+
+必须尽量展示：
+
+- 文件名
+- header_path
+- score
+- line range
+- block_type
+
+---
+
+### Source展示优先级高于聊天气泡美观
+
+企业RAG用户：
+
+通常更关心：
+
+- 来源是否可信
+- 来源是否正确
+- 命中了哪里
+
+而不是：
+
+- UI是否像ChatGPT
+
+---
+
+### Source必须支持快速跳转
+
+后续允许支持：
+
+- 点击跳转原文
+- 点击展开上下文
+- 点击高亮行号
+- 点击查看完整Markdown
+
+
+
+## 11.9 Markdown渲染规则
+
+Markdown属于核心数据格式。
+
+UI必须尽量正确渲染：
+
+- table
+- code block
+- math
+- heading
+- quote
+- list
+
+---
+
+### 不允许为了聊天体验破坏Markdown
+
+禁止：
+
+- 强制压缩table
+- 强制截断code block
+- 删除markdown结构
+- 自动改写markdown
+
+原因：
+
+企业文档：
+
+Markdown结构本身就是重要信息。
+
+
+## 11.10 原文查看规则
+
+用户必须能够：
+
+- 查看完整原文
+- 查看命中区域
+- 查看上下文
+- 查看完整Markdown
+
+原文查看能力：
+
+属于核心功能。
+
+不是附加功能。
+
+---
+
+### 原文优先于AI总结
+
+AI回答：
+只是辅助入口。
+
+文档原文：
+才是最终可信来源。
+
+## 11.11 Streaming UI规则
+
+Streaming过程中：
+
+UI必须尽量保持稳定。
+
+避免：
+
+- 页面频繁跳动
+- 大面积重绘
+- Source区域闪烁
+- Debug区域闪烁
+
+---
+
+### Streaming状态必须明确
+
+用户需要明确知道：
+
+- 是否正在retrieval
+- 是否正在生成
+- 是否已经结束
+- 是否发生错误
+
+---
+
+### Streaming属于长任务状态展示
+
+企业RAG回答：
+
+可能持续较长时间。
+
+因此：
+
+UI需要：
+
+- loading状态
+- progress状态
+- status状态
+
+
+## 11.12 Debug UI规则
+
+Debug信息：
+
+默认允许显示。
+不应深度隐藏。
+
+---
+
+### Debug属于RAG系统组成部分
+
+Debug不是：
+
+“开发临时功能”。
+
+而是：
+
+企业RAG长期观测能力。
+
+---
+
+### Debug信息允许很多
+
+企业RAG调试：
+
+往往需要：
+
+- retrieval结果
+- metadata
+- rerank
+- score
+- token usage
+- timing
+- routing
+
+因此：
+
+Debug Panel允许较复杂。
+
+
+## 11.13 UI状态管理规则
+
+UI状态必须尽量与：
+
+- retrieval状态
+- streaming状态
+- source状态
+- debug状态
+
+解耦。
+
+---
+
+### UI不应直接操作底层retrieval
+
+UI职责：
+
+- 展示
+- 状态同步
+- 用户交互
+
+Retrieval逻辑：
+
+应保留在：
+
+- service
+- engine
+
+---
+
+### UI允许局部刷新
+
+Streaming场景下：
+
+优先：
+
+- 局部更新
+- 局部刷新
+
+避免：
+
+- 全页面刷新
+- 大区域重建
+
+
+## 11.14 Citation与高亮规则
+
+Citation不仅是：
+
+“显示来源”。
+
+还包括：
+
+- 原文定位
+- 行号关联
+- 上下文关联
+- source_nodes关联
+
+---
+
+### 高亮必须尽量稳定
+
+高亮区域：
+
+应尽量：
+
+- 与原文对应
+- 与line number对应
+- 与retrieval chunk对应
+
+避免：
+
+- 随意高亮
+- 错误偏移
+- 高亮区域漂移
+
+
+## 11.15 图片与静态资源规则
+
+Markdown中的：
+
+- 图片
+- 图表
+- 静态资源
+
+属于文档重要组成部分。
+
+UI必须尽量支持：
+
+- 正确路径解析
+- 相对路径处理
+- 原图查看
+- 图片预览
+
+---
+
+## 不允许破坏Markdown资源引用
+
+禁止：
+
+- 自动删除图片引用
+- 自动修改资源路径
+- 强制内联所有资源
+
+
 # 12. 历史设计决策
 
 ## 12.1 为什么不用默认Splitter
@@ -1172,6 +1481,27 @@ Retrieval grounding核心数据。
 - 只保留最终LLM回答
 
 
+## 12.6 为什么UI必须保留Debug信息
+
+企业RAG问题：
+
+很多并不是：
+
+“模型能力问题”。
+
+而是：
+
+- retrieval失败
+- metadata错误
+- rerank错误
+- chunk切坏
+- markdown解析错误
+
+如果没有Debug信息：
+
+几乎无法定位问题。
+
+
 # 13. 禁止的错误优化
 
 禁止：
@@ -1230,6 +1560,28 @@ Retrieval grounding核心数据。
 而不是：
 
 “AI说了什么”。
+
+## 13.2 禁止为了“像ChatGPT”而破坏RAG能力
+
+禁止：
+
+- 隐藏source_nodes
+- 隐藏citation
+- 隐藏debug
+- 隐藏metadata
+- 过度简化UI
+
+原因：
+
+企业RAG：
+
+本质是：
+
+信息检索系统。
+
+不是：
+
+社交聊天系统。
 
 
 # 14. AI协作规则
@@ -1331,6 +1683,39 @@ RAG系统状态编排层。
 可能共享同一Service层。
 
 
+## 14.5 WebUI属于RAG信息展示层
+
+WebUI职责：
+
+- 展示retrieval结果
+- 展示source_nodes
+- 展示markdown
+- 展示citation
+- 展示debug信息
+- 展示streaming状态
+
+---
+
+## WebUI不是核心业务逻辑层
+
+WebUI不应：
+
+- 实现retrieval逻辑
+- 实现routing逻辑
+- 实现chunk逻辑
+
+WebUI属于：
+
+RAG信息展示层。
+
+核心逻辑：
+
+应位于：
+
+- service
+- engine
+
+
 # 15. 后续规划
 
 未来可能增加：
@@ -1353,6 +1738,30 @@ RAG系统状态编排层。
 尽量合理、快速、可追溯地呈现用户需要的数据。
 
 ---
+
+## 15.1 后续可能增加的WebUI能力
+
+后续允许增加：
+
+- source collapse
+- source grouping
+- markdown原文高亮
+- retrieval trace tree
+- chunk merge展示
+- retrieval timeline
+- rerank visualization
+- metadata filter UI
+- source compare
+- 多文档对比
+
+目标：
+
+增强：
+
+- retrieval可解释性
+- 原文阅读体验
+- RAG可观测性
+- 企业维护体验
 
 # 16. 明确不做的内容
 

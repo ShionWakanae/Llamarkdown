@@ -22,7 +22,7 @@ I am experimenting with building applications based on LlamaIndex. Like this lit
 ## Project Features
 
 ### (1) Knowledge Base Construction
-1. Build a vector database required for RAG, with data stored in `project/storage` (LlamaIndex default).
+1. Build a vector database required for RAG, with data stored in `project/storage/chroma_db` (use chroma embbeded).
    * Supports Markdown files with well-structured sections.
    * A custom header parser splits Markdown files based on their heading hierarchy.
    * A custom content-aware parser further chunks sections based on text, tables, code blocks, etc.
