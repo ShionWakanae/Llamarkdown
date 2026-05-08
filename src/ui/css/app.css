@@ -59,14 +59,14 @@ body {
     聊天气泡
 */
 .q-message {
-    margin-bottom: 2px !important;
+    margin-bottom: 1px !important;
 }
 
 .q-message-text {
     border-radius: 14px;
     line-height: 1.5;
     font-size: 16px;
-    padding: 8px 12px 6px 12px;
+    padding: 12px 12px 12px 12px;
 }
 
 
@@ -77,6 +77,7 @@ body {
     position: relative;
     color: #eaeaea !important;
     background: #1f553f !important;
+    font-weight: 600;
 }
 
 .q-message-sent .q-message-text::before {

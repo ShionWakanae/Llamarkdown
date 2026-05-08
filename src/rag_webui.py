@@ -728,7 +728,7 @@ def main():
 
                             with llm_msg:
                                 wait_html = markdown.markdown(
-                                    "\U000023f3正在检索资料，请稍候……",
+                                    "&nbsp;&nbsp;\U000023f3我正在检索资料库，可能需要时间，请耐心等候……&nbsp;&nbsp;",
                                 )
                                 nonlocal message_id
                                 message_id += 1
@@ -748,7 +748,9 @@ def main():
                                     )
                                 )
 
-                            sources_container = ui.row().classes("gap-0 mt-0 mb-0")
+                            sources_container = (
+                                ui.row().classes("gap-0 mt-0 mb-0").style("width: 85%;")
+                            )
                             action_container = ui.row().classes("gap-2 mt-0 mb-0")
                             auto_scroll_chat(client)
 
@@ -795,8 +797,6 @@ def main():
                             if not first_token:
                                 log("Streaming...")
                             first_token = True
-                            if partial_text == "":
-                                assistant_message.content = ""
                             accumulated += event["content"]
                             if "\n" in accumulated:
                                 partial_text += accumulated
@@ -915,9 +915,7 @@ def main():
                     if should_show_sources:
                         shown_files = set()
                         with sources_container:
-                            with (
-                                ui.row().classes("gap-2 mt-2").style("max-width: 85%;")
-                            ):
+                            with ui.row().classes("gap-2 mt-0").style("width: 85%;"):
                                 for file_name, file_info in file_map.items():
                                     file_path = file_info["path"]
                                     hits = file_info["hits"]
