@@ -1,3 +1,4 @@
+import sys
 import asyncio
 import datetime
 from pathlib import Path
@@ -10,11 +11,37 @@ from nicegui import app
 from nicegui import context
 from rich import print
 import re
-from rag.service import service
 from rag.formatter import build_reference_files
 from rag.formatter import build_debug_html
 from dotenv import load_dotenv
 import os
+from utils.logger import logger
+
+
+class FilteredStderr:
+    def __init__(self, original):
+        self.original = original
+        self.filters = [
+            "resource module not available on Windows",
+            "tokenizer parameter is deprecated",
+            "Use a stemmer from PyStemmer instead",
+        ]
+
+    def write(self, text):
+        if not any(f in text for f in self.filters):
+            self.original.write(text)
+
+    def flush(self):
+        self.original.flush()
+
+
+sys.stderr = FilteredStderr(sys.stderr)
+
+
+from rag.service import service
+
+
+log = logger.log
 
 load_dotenv()
 app.add_static_files("/static/js", "./src/ui/js")
@@ -22,11 +49,6 @@ app.add_static_files("/static/css", "./src/ui/css")
 ref_path = os.getenv("REF_FILE_PATH", "")
 if ref_path:
     app.add_static_files("/static/ref_md", f"{ref_path}")
-
-
-def log(msg):
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-    print(f"[{timestamp}] {msg}")
 
 
 def rewrite_image_paths(md_str: str) -> str:
@@ -309,7 +331,7 @@ def main():
                             behavior: "smooth",
                             block: "center"
                         });
-                }, 100);
+                }, 500);
                 """)
 
         dialog.open()
@@ -583,7 +605,7 @@ def main():
                     clear_button.icon = "hourglass_empty"
                     input_box.disable()
                     nonlocal debug_panel_shown
-                    log(f"Question: {message}")
+                    log(f"Question: {message}", False)
 
                     # messages
                     qtime = f"\U0001f550{datetime.datetime.now().strftime('%H:%M:%S')}"
@@ -716,21 +738,27 @@ def main():
 
                     log("Answer completed")
                     log(
-                        f"Query: {timing.get('query_ms', 0)} ms, LLM: {timing.get('llm_ms', 0)} ms, Total: {timing.get('total_ms', 0)} ms"
+                        f"Query: {timing.get('query_ms', 0)} ms, LLM: {timing.get('llm_ms', 0)} ms, Total: {timing.get('total_ms', 0)} ms",
+                        False,
                     )
                     if not dct_answer:
                         usage = service.get_token_usage()
                         src = usage["rewrite"]["source"]
                         model = usage["rewrite"]["model"]
                         log(
-                            f"Rewrite token in: {usage['rewrite']['prompt_tokens']}, out:{usage['rewrite']['completion_tokens']}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}"
+                            f"Rewrite token in: {usage['rewrite']['prompt_tokens']}, out:{usage['rewrite']['completion_tokens']}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
+                            False,
                         )
                         src = usage["answer"]["source"]
                         model = usage["answer"]["model"]
                         log(
-                            f"Answers token in: {usage['answer']['prompt_tokens']}, out:{usage['answer']['completion_tokens']}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}"
+                            f"Answers token in: {usage['answer']['prompt_tokens']}, out:{usage['answer']['completion_tokens']}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
+                            False,
                         )
-                        log(f"Total token usage: {usage['total']['total_tokens']}")
+                        log(
+                            f"Total token usage: {usage['total']['total_tokens']}",
+                            False,
+                        )
                     print()
 
                     # fallback

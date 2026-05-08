@@ -1,20 +1,36 @@
 # import json
 import sys
-import datetime
-
 import builtins
 from rich import print
 from rich.text import Text
 from rich.live import Live
-
-# from rich.json import JSON
 from utils.AsyncSpinner import AsyncSpinner
+from utils.logger import logger
+
+
+class FilteredStderr:
+    def __init__(self, original):
+        self.original = original
+        self.filters = [
+            "resource module not available on Windows",
+            "tokenizer parameter is deprecated",
+            "Use a stemmer from PyStemmer instead",
+        ]
+
+    def write(self, text):
+        if not any(f in text for f in self.filters):
+            self.original.write(text)
+
+    def flush(self):
+        self.original.flush()
+
+
+sys.stderr = FilteredStderr(sys.stderr)
+
 from rag.service import service
 
 
-def log(msg):
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-    print(f"[{timestamp}] {msg}")
+log = logger.log
 
 
 if len(sys.argv) != 2:
@@ -22,30 +38,10 @@ if len(sys.argv) != 2:
     sys.exit(1)
 
 quest_str = sys.argv[1]
-log(f"Question: [bold bright_yellow]{quest_str}[/]")
-
-# log("Vector retrieval test")
-# vector_results = vector_retriever.retrieve(quest_str)
-# for i, node in enumerate(vector_results[:5], 1):
-#     print(f"\n[VECTOR {i}] score={node.score}")
-#     print(node.text[:300])
-
-# log("hybrid_tokenizer")
-# print(hybrid_tokenizer(quest_str))
-
-# log("all_nodes")
-# print(all_nodes[0].text[:200])
-
-# log("hybrid_tokenizer all_nodes")
-# print(hybrid_tokenizer(all_nodes[0].text[:200]))
-
-# log("BM25 retrieval test")
-# bm25_results = bm25_retriever.retrieve(quest_str)
-# for i, node in enumerate(bm25_results[:5], 1):
-#     print(f"\n[BM25 {i}] score={node.score}")
-#     print(node.text[:300])
+log(f"Question: [bold bright_yellow]{quest_str}[/]", False)
 
 debug_data = None
+dct_answer = False
 spinner = AsyncSpinner()
 timing = {}
 with Live(Text("....", style="yellow"), refresh_per_second=2) as live:
@@ -74,6 +70,9 @@ with Live(Text("....", style="yellow"), refresh_per_second=2) as live:
         elif event["type"] == "debug":
             debug_data = event["content"]
             timing = debug_data.get("timing", {})
+        # status
+        elif event["type"] == "status":
+            dct_answer = event["source"] == "dict"
     if accumulated:
         print(f"[bold bright_magenta]{accumulated}[/]", end="", flush=True)
     if first:
@@ -99,26 +98,33 @@ if source_nodes:
 
 log("Answer completed")
 log(
-    f"Query: {timing.get('query_ms', 0)} ms, LLM: {timing.get('llm_ms', 0)} ms, Total: {timing.get('total_ms', 0)} ms"
+    f"Query: {timing.get('query_ms', 0)} ms, LLM: {timing.get('llm_ms', 0)} ms, Total: {timing.get('total_ms', 0)} ms",
+    False,
 )
-usage = service.get_token_usage()
-src = usage["rewrite"]["source"]
-model = usage["rewrite"]["model"]
-log(
-    f"Rewrite token in: {usage['rewrite']['prompt_tokens']}, out:{usage['rewrite']['completion_tokens']}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}"
-)
-src = usage["answer"]["source"]
-model = usage["answer"]["model"]
-log(
-    f"Answers token in: {usage['answer']['prompt_tokens']}, out:{usage['answer']['completion_tokens']}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}"
-)
-log(f"Total token usage: {usage['total']['total_tokens']}")
+if not dct_answer:
+    usage = service.get_token_usage()
+    src = usage["rewrite"]["source"]
+    model = usage["rewrite"]["model"]
+    log(
+        f"Rewrite token in: {usage['rewrite']['prompt_tokens']}, out:{usage['rewrite']['completion_tokens']}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
+        False,
+    )
+    src = usage["answer"]["source"]
+    model = usage["answer"]["model"]
+    log(
+        f"Answers token in: {usage['answer']['prompt_tokens']}, out:{usage['answer']['completion_tokens']}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
+        False,
+    )
+    log(f"Total token usage: {usage['total']['total_tokens']}", False)
 print()
 
 if debug_data:
     show_details = input("你要查看具体的命中信息吗？[y/N]: ").strip().lower()
     if show_details.lower() in ("y", "yes"):
-        log("命中的内容:")
+        log(
+            "命中的内容:",
+            False,
+        )
 
         retrieval = debug_data.get(
             "retrieval",
@@ -134,4 +140,7 @@ if debug_data:
             builtins.print(node.text)
             print()
 
-log("All done ✅")
+log(
+    "All done ✅",
+    False,
+)

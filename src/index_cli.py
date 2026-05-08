@@ -1,4 +1,3 @@
-import datetime
 from rich import print
 from llama_index.core import VectorStoreIndex
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
@@ -11,11 +10,9 @@ from llama_index.core import Settings as lli_Settings
 import chromadb
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core import StorageContext
+from utils.logger import logger
 
-
-def log(msg):
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-    print(f"[{timestamp}] {msg}")
+log = logger.log
 
 
 def print_metadata_stats(final_nodes):

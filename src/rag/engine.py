@@ -1,7 +1,6 @@
 import os
 import re
 import json
-import datetime
 import traceback
 import warnings
 from rich import print
@@ -20,6 +19,9 @@ import chromadb
 from llama_index.core import Settings as lli_Settings
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core import VectorStoreIndex
+from utils.logger import logger
+
+log = logger.log
 
 warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API")
 import jieba  # noqa: E402
@@ -83,11 +85,6 @@ class UsageCollector:
             "answer": self.answer,
             "total": self.get_total(),
         }
-
-
-def log(msg):
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-    print(f"[{timestamp}] {msg}")
 
 
 def hybrid_tokenizer(text):
@@ -504,7 +501,7 @@ class RagEngine:
             retrieval_query = question
 
         log(f"[Rewrite] 意图是: {user_intent} ({presentation_intent})")
-        log(f"[Rewrite] 关键词: {retrieval_query}")
+        log(f"[Rewrite] 关键词: {retrieval_query}", False)
 
         # retrieve
         nodes_retriever = self.retriever.retrieve(retrieval_query)
