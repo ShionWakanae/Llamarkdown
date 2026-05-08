@@ -15,6 +15,10 @@
         return document.querySelector('.floating-clear-btn');
     }
 
+    function getEmptyState() {
+        return document.querySelector('.empty-state');
+    }
+
     function getOuterContainer() {
         const area = getArea();
         if (!area) return null;
@@ -71,15 +75,20 @@
     function updateContainerHeight() {
         const area = getArea();
         const container = getOuterContainer();
-        const clearBtn = getClearBtn();
         if (!area || !container) return;
 
         var hasChildren = area.children.length > 0;
         container.style.height = hasChildren ? '100%' : '50%';
 
+        const clearBtn = getClearBtn();
         if (clearBtn) {
             clearBtn.style.opacity = hasChildren ? '0.8' : '0.0';
             clearBtn.style.pointerEvents = hasChildren ? 'auto' : 'none';
+        }
+
+        const emptyState = getEmptyState();
+        if (emptyState) {
+            emptyState.style.opacity = hasChildren ? '0.0' : '1';
         }
     }
 

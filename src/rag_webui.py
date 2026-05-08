@@ -482,6 +482,55 @@ def main():
                         transition: opacity 0.3s;
                     """)
                 )
+
+                # 空状态区域
+                empty_state = (
+                    ui.column()
+                    .classes("empty-state items-center justify-center")
+                    .style("""
+                        position: absolute;
+                        inset: 0;
+
+                        z-index: 5;
+                        pointer-events: none;
+
+                        gap: 10px;
+
+                        opacity: 1;
+                        transition: opacity 0.25s ease;
+                        transform: translateY(80px);
+                    """)
+                )
+
+                with empty_state:
+                    ui.image("images/logo.png").style("""
+                        width: 128px;
+                        height: 128px;
+                        opacity: 0.9;
+                    """)
+
+                    ui.label("企业知识库").style("""
+                        font-size: 28px;
+                        font-weight: 700;
+                        color: #f0f0f0;
+                        letter-spacing: 1px;
+                        margin-top: 4px;
+                    """)
+
+                    ui.label(
+                        "查询公司内部资料、项目方案、软件系统、版本历史\n移动通信领域术语、用户数据定义、表结构信息"
+                    ).style("""
+                        white-space: pre-line;
+
+                        text-align: center;
+                        line-height: 1.7;
+
+                        font-size: 15px;
+                        color: #9aa4b2;
+
+                        max-width: 520px;
+                    """)
+
                 # chat area
                 chat_scroll = (
                     ui.column()
