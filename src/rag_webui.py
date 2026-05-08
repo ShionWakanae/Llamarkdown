@@ -37,7 +37,7 @@ class FilteredStderr:
 sys.stderr = FilteredStderr(sys.stderr)
 
 
-from rag.service import service
+from rag.service import service  # noqa: E402
 
 
 log = logger.log
