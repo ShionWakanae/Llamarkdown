@@ -419,47 +419,69 @@ def main():
                 "font-size: 12px; color: #888; margin-right: 12px;"
             )
 
-        (
-            ui.button(
-                icon="keyboard_arrow_down",
-                on_click=lambda: context.client.run_javascript("scrollToBottom()"),
-            )
-            .classes("scroll-to-bottom-btn")
-            .props("round")
-            .style("""
-                position: absolute;
-                bottom: 160px;
-                left: 50%;
-                transform: translateX(-50%);
-                z-index: 100;
-                opacity: 0.0;
-                transition: opacity 0.5s;
-            """)
-        )
-
-        with (
+        initial_container_height = "100%" if chat_history else "50%"
+        outer_container = (
             ui.row()
-            .classes("w-full no-wrap")
+            .classes("w-full no-wrap outer-container")
             .style(
-                """
-            height: 100%;
+                f"""
+            height: {initial_container_height};
             max-width: 1440px;
             margin: 0 auto;
             padding: 4px;
             gap: 4px;
             overflow: hidden;
+            transition: height 0.3s ease;
             """
             )
-        ):
+        )
+        with outer_container:
             # left
             left_column = ui.column().style(
                 """
+                position: relative;
                 flex: 1;
                 height: 100%;
                 overflow: hidden;
                 """
             )
             with left_column:
+                (
+                    ui.button(
+                        icon="keyboard_arrow_down",
+                        on_click=lambda: context.client.run_javascript(
+                            "scrollToBottom()"
+                        ),
+                    )
+                    .classes("scroll-to-bottom-btn")
+                    .props("round")
+                    .style("""
+                        position: absolute;
+                        bottom: 30px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        z-index: 100;
+                        opacity: 0.0;
+                        transition: opacity 0.5s;
+                    """)
+                )
+
+                (
+                    ui.button(
+                        icon="cleaning_services",
+                        on_click=confirm_clear,
+                    )
+                    .classes("floating-clear-btn")
+                    .props("round")
+                    .style("""
+                        position: absolute;
+                        bottom: 30px;
+                        left: 85%;
+                        z-index: 100;
+                        opacity: 0.0;
+                        transition: opacity 0.3s;
+                    """)
+                )
                 # chat area
                 chat_scroll = (
                     ui.column()
@@ -560,7 +582,7 @@ def main():
         # input row
         with (
             ui.row()
-            .classes("w-full items-center")
+            .classes("w-full items-center justify-center no-wrap")
             .style(
                 """
                 padding-top: 4px;
@@ -568,13 +590,22 @@ def main():
                 """
             )
         ):
-            input_box = (
+            with (
                 ui.input(
                     placeholder="请输入简短词汇进行字典查询，或输入完整问题进行知识库检索..."
                 )
-                .props("outlined clearable")
-                .classes("flex-1")
-            )
+                .classes("chat-input")
+                .props("clearable")
+                .style("""
+                flex: 1;
+                min-width: 0;
+                max-width: 900px;
+            """) as input_box
+            ):
+                with input_box.add_slot("append"):
+                    send_button = ui.button(
+                        icon="send",
+                    ).props("flat round dense")
 
             async def send_message(
                 message=None,
@@ -596,12 +627,6 @@ def main():
                     input_box.value = ""
                     send_button.disable()
                     send_button.props("loading")
-                    send_button.set_text("稍候")
-                    send_button.icon = "hourglass_empty"
-                    clear_button.disable()
-                    clear_button.props("loading")
-                    clear_button.set_text("稍候")
-                    clear_button.icon = "hourglass_empty"
                     input_box.disable()
                     nonlocal debug_panel_shown
                     log(f"Question: {message}", False)
@@ -861,12 +886,6 @@ def main():
                     auto_scroll_chat(client)
                     send_button.enable()
                     send_button.props(remove="loading")
-                    send_button.set_text("发送")
-                    send_button.icon = "send"
-                    clear_button.enable()
-                    clear_button.props(remove="loading")
-                    clear_button.set_text("清空")
-                    clear_button.icon = "cleaning_services"
                     input_box.enable()
 
             # enter submit
@@ -874,14 +893,9 @@ def main():
                 "keydown.enter",
                 lambda e: send_message(),
             )
-            send_button = ui.button("发送", on_click=send_message)
-            send_button.props('icon="send"')
-
-            clear_button = ui.button("清空", on_click=confirm_clear)
-            clear_button.props('icon="cleaning_services"')
-
-            debug_button = ui.button("调试面板")
-            debug_button.props('icon="developer_mode"')
+            send_button.on("click", send_message)
+            debug_button = ui.button()
+            debug_button.props('icon="developer_mode" round')
             debug_button.on("click", show_hide_debug_panel)
 
 

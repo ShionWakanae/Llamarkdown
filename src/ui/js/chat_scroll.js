@@ -11,6 +11,16 @@
         return document.querySelector('.scroll-to-bottom-btn');
     }
 
+    function getClearBtn() {
+        return document.querySelector('.floating-clear-btn');
+    }
+
+    function getOuterContainer() {
+        const area = getArea();
+        if (!area) return null;
+        return area.closest('.outer-container');
+    }
+
     function scrollToBottom() {
         const area = getArea();
 
@@ -58,6 +68,21 @@
         area.style.webkitMaskImage = maskGradient;
     }
 
+    function updateContainerHeight() {
+        const area = getArea();
+        const container = getOuterContainer();
+        const clearBtn = getClearBtn();
+        if (!area || !container) return;
+
+        var hasChildren = area.children.length > 0;
+        container.style.height = hasChildren ? '100%' : '50%';
+
+        if (clearBtn) {
+            clearBtn.style.opacity = hasChildren ? '0.8' : '0.0';
+            clearBtn.style.pointerEvents = hasChildren ? 'auto' : 'none';
+        }
+    }
+
     function checkScroll() {
 
         const area = getArea();
@@ -66,6 +91,7 @@
         if (!area || !btn) return;
 
         updateFadeEffect();
+        updateContainerHeight();
 
         const distance =
             area.scrollHeight - area.scrollTop - area.clientHeight;
@@ -117,7 +143,8 @@
         const area = getArea();
         if (!area) return;
 
-        const observer = new MutationObserver(() => {
+        const observer = new MutationObserver(function () {
+            updateContainerHeight();
             checkScroll();
         });
 
@@ -142,6 +169,7 @@
 
         bindScrollListener();
         observeChatArea();
+        updateContainerHeight();
         updateFadeEffect();
         checkScroll();
     }

@@ -20,26 +20,38 @@ body {
     通用面板
 */
 
-.q-field,
 .q-select,
-.q-textarea,
-.q-input,
 .border-panel {
     background: #1b1b1b !important;
     border: 1px solid #3a3a3a !important;
     color: #e0e0e0 !important;
 }
 
-
 /*
     输入框
 */
-.q-field__control {
+
+
+.chat-input .q-field__control {
     background: #1b1b1b !important;
     border: 1px solid #3a3a3a !important;
-    color: #e0e0e0 !important;
+    border-radius: 999px !important;
 }
 
+.chat-input .q-field__control:before,
+.chat-input .q-field__control:after {
+    border: none !important;
+    background: none !important;
+    box-shadow: none !important;
+}
+
+.chat-input .q-field__native {
+    padding-left: 14px !important;
+    padding-right: 8px !important;
+}
+.chat-input .q-field__append {
+    padding-right: 10px !important;
+}
 
 /*
     聊天气泡
