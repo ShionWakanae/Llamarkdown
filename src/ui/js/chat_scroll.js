@@ -22,6 +22,42 @@
         }
     }
 
+    function updateFadeEffect() {
+        const area = getArea();
+        if (!area) return;
+
+        const scrollTop = area.scrollTop;
+        const scrollHeight = area.scrollHeight;
+        const clientHeight = area.clientHeight;
+        const maxScroll = scrollHeight - clientHeight;
+
+        if (maxScroll <= 0) {
+            const fullVisible = 'linear-gradient(to bottom, black 0%, black 100%)';
+            area.style.maskImage = fullVisible;
+            area.style.webkitMaskImage = fullVisible;
+            return;
+        }
+
+        const fadePercent = 6;
+        const fadeThreshold = 30;
+
+        const topRatio = Math.min(scrollTop / fadeThreshold, 1);
+        const topFade = topRatio * fadePercent;
+
+        const bottomDistance = maxScroll - scrollTop;
+        const bottomRatio = Math.min(bottomDistance / fadeThreshold, 1);
+        const bottomFade = bottomRatio * fadePercent;
+
+        const maskGradient = 'linear-gradient(to bottom, ' +
+            'transparent 0%, ' +
+            'black ' + topFade + '%, ' +
+            'black ' + (100 - bottomFade) + '%, ' +
+            'transparent 100%)';
+
+        area.style.maskImage = maskGradient;
+        area.style.webkitMaskImage = maskGradient;
+    }
+
     function checkScroll() {
 
         const area = getArea();
@@ -29,12 +65,13 @@
 
         if (!area || !btn) return;
 
+        updateFadeEffect();
+
         const distance =
             area.scrollHeight - area.scrollTop - area.clientHeight;
 
         const isAtBottom = distance < 100;
 
-        // 到底部：立即隐藏
         if (isAtBottom) {
 
             clearTimeout(showBtnTimer);
@@ -46,12 +83,10 @@
             return;
         }
 
-        // 已经显示了
         if (btn.style.opacity === '0.8') {
             return;
         }
 
-        // 延迟显示
         clearTimeout(showBtnTimer);
 
         showBtnTimer = setTimeout(() => {
@@ -98,7 +133,6 @@
         const area = getArea();
         const btn = getBtn();
 
-        // 组件未挂载，最多重试 ~3秒
         if ((!area || !btn) && retry < 30) {
             setTimeout(() => initWhenReady(retry + 1), 100);
             return;
@@ -108,15 +142,14 @@
 
         bindScrollListener();
         observeChatArea();
+        updateFadeEffect();
         checkScroll();
     }
 
-    // 页面加载后启动
     document.addEventListener('DOMContentLoaded', () => {
         initWhenReady();
     });
 
-    // 暴露给 Python 调用（保持兼容）
     window.scrollToBottom = scrollToBottom;
     window.checkScroll = checkScroll;
 })();

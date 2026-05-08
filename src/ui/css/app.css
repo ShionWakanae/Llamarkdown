@@ -6,6 +6,10 @@ body {
 
 .chat-area {
     overflow-y: auto;
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 100%);
+    mask-image: linear-gradient(to bottom, black 0%, black 100%);
+    -webkit-mask-mode: alpha;
+    mask-mode: alpha;
 }
 
 .debug-panel {
