@@ -468,12 +468,13 @@ def main():
                         """
                     flex: 1;
                     overflow-y: auto;
-                    background: #1b1b1b;
+                    background: #313131;
 
-                    border: 1px solid #3a3a3a;
+                    border: none;
                     border-radius: 8px;
 
                     padding: 12px;
+                    margin: 0px;
                     """
                     )
                 )
@@ -713,9 +714,6 @@ def main():
                         # debug
                         elif event["type"] == "debug":
                             timing = event["content"].get("timing", {})
-                            debug_panel_shown = False
-                            show_hide_debug_panel()
-
                             debug_html = build_debug_html(event["content"])
                             debug_panel.content = debug_html
                             debug_panel.update()
