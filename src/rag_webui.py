@@ -193,6 +193,10 @@ def main():
     def clear_chat():
         chat_history.clear()
         chat_scroll.clear()
+        clear_button.disable()
+        clear_button.style("""
+            filter: grayscale(1);
+        """)
         nonlocal debug_panel_shown
         debug_panel_shown = True
         show_hide_debug_panel()
@@ -483,23 +487,6 @@ def main():
                     """)
                 )
 
-                (
-                    ui.button(
-                        icon="cleaning_services",
-                        on_click=confirm_clear,
-                    )
-                    .classes("floating-clear-btn")
-                    .props("round")
-                    .style("""
-                        position: absolute;
-                        bottom: 30px;
-                        left: 85%;
-                        z-index: 100;
-                        opacity: 0.0;
-                        transition: opacity 0.3s;
-                    """)
-                )
-
                 # 空状态区域
                 empty_state = (
                     ui.column()
@@ -574,14 +561,14 @@ def main():
                                     sent=True,
                                     name="用户🧑",
                                     stamp=item["qtime"],
-                                ).style("max-width: 80%;"):
+                                ).style("max-width: 85%;"):
                                     ui.markdown(item["question"])
 
                         with ui.column().classes("w-full items-start mt-0 mb-0"):
                             with ui.chat_message(
                                 sent=False,
                                 name="🧠历史回复",
-                            ).style("max-width: 80%;"):
+                            ).style("max-width: 85%;"):
                                 html = render_markdown_html(item["answer"])
                                 message_id += 1
                                 ui.html(html).props(
@@ -602,7 +589,7 @@ def main():
                                 with (
                                     ui.row()
                                     .classes("gap-0 mt-0 mb-0")
-                                    .style("max-width: 80%;")
+                                    .style("max-width: 85%;")
                                 ):
                                     for source in item["sources"]:
                                         ui.button(
@@ -611,7 +598,11 @@ def main():
                                             on_click=lambda n=Path(source["file_name"]).stem, p=source["path"], h=source["hits"]: (
                                                 show_file_preview(n, p, h)
                                             ),
-                                        ).props("flat dense")
+                                        ).props("flat dense").style("""
+                                            white-space: nowrap;
+                                            flex-shrink: 0;
+                                            min-width: 140px;
+                                        """)
 
             # right
             right_column = ui.column().style(
@@ -656,6 +647,19 @@ def main():
                 """
             )
         ):
+            clear_button = ui.button(
+                icon="cleaning_services", on_click=confirm_clear
+            ).props("round")
+            if len(chat_scroll.default_slot.children) > 0:
+                clear_button.enable()
+                clear_button.style("""
+                    filter: none;
+                """)
+            else:
+                clear_button.disable()
+                clear_button.style("""
+                    filter: grayscale(1);
+                """)
             with (
                 ui.input(
                     placeholder="请输入简短词汇进行字典查询，或输入完整问题进行知识库检索..."
@@ -693,6 +697,11 @@ def main():
                     input_box.value = ""
                     send_button.disable()
                     send_button.props("loading")
+                    clear_button.disable()
+                    clear_button.style("""
+                        filter: grayscale(1);
+                    """)
+
                     input_box.disable()
                     nonlocal debug_panel_shown
                     log(f"Question: {message}", False)
@@ -707,7 +716,7 @@ def main():
                                     sent=True,
                                     name="用户🧑",
                                     stamp=qtime,
-                                ).style("max-width: 80%;"):
+                                ).style("max-width: 85%;"):
                                     ui.markdown(message)
 
                         # 助理消息
@@ -715,7 +724,7 @@ def main():
                             llm_msg = ui.chat_message(
                                 sent=False,
                                 name="\U00002728智能助理",
-                            ).style("max-width: 80%;")
+                            ).style("max-width: 85%;")
 
                             with llm_msg:
                                 wait_html = markdown.markdown(
@@ -907,7 +916,7 @@ def main():
                         shown_files = set()
                         with sources_container:
                             with (
-                                ui.row().classes("gap-2 mt-2").style("max-width: 80%;")
+                                ui.row().classes("gap-2 mt-2").style("max-width: 85%;")
                             ):
                                 for file_name, file_info in file_map.items():
                                     file_path = file_info["path"]
@@ -952,6 +961,10 @@ def main():
                     auto_scroll_chat(client)
                     send_button.enable()
                     send_button.props(remove="loading")
+                    clear_button.enable()
+                    clear_button.style("""
+                        filter: none;
+                    """)
                     input_box.enable()
 
             # enter submit

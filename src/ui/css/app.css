@@ -30,7 +30,9 @@ body {
 /*
     输入框
 */
-
+.chat-input input::placeholder {
+    color: #666666 !important;
+}
 
 .chat-input .q-field__control {
     background: #1b1b1b !important;

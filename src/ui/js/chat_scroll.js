@@ -11,10 +11,6 @@
         return document.querySelector('.scroll-to-bottom-btn');
     }
 
-    function getClearBtn() {
-        return document.querySelector('.floating-clear-btn');
-    }
-
     function getEmptyState() {
         return document.querySelector('.empty-state');
     }
@@ -79,12 +75,6 @@
 
         var hasChildren = area.children.length > 0;
         container.style.height = hasChildren ? '100%' : '50%';
-
-        const clearBtn = getClearBtn();
-        if (clearBtn) {
-            clearBtn.style.opacity = hasChildren ? '0.8' : '0.0';
-            clearBtn.style.pointerEvents = hasChildren ? 'auto' : 'none';
-        }
 
         const emptyState = getEmptyState();
         if (emptyState) {
