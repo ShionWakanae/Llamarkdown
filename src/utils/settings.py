@@ -39,7 +39,7 @@ class Settings:
 
         # Other
         self.ref_file_path = os.getenv("REF_FILE_PATH", "")
-        self.storage_secret = self._required("STORAGE_SECRET", "")  # you need this
+        self.storage_secret = self._required("STORAGE_SECRET")  # you need this
 
         # Prompts
         self.rag_system_prompt = """
