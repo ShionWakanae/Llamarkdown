@@ -13,9 +13,8 @@ from rich import print
 import re
 from rag.formatter import build_reference_files
 from rag.formatter import build_debug_html
-from dotenv import load_dotenv
-import os
 from utils.logger import logger
+from utils.settings import settings
 
 
 class FilteredStderr:
@@ -43,10 +42,9 @@ from rag.service import service
 
 log = logger.log
 
-load_dotenv()
 app.add_static_files("/static/js", "./src/ui/js")
 app.add_static_files("/static/css", "./src/ui/css")
-ref_path = os.getenv("REF_FILE_PATH", "")
+ref_path = settings.ref_file_path
 if ref_path:
     app.add_static_files("/static/ref_md", f"{ref_path}")
 
@@ -895,6 +893,6 @@ ui.run(
     port=7860,
     title="企业知识库",
     language="zh-CN",
-    storage_secret=os.getenv("STORAGE_SECRET"),
+    storage_secret=settings.storage_secret,
     reload=False,
 )

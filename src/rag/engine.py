@@ -1,15 +1,12 @@
-import os
 import re
 import json
 import traceback
 import warnings
 from rich import print
-from dotenv import load_dotenv
 from transformers.utils import logging
 from llama_index.core.base.llms.types import (
     CompletionResponse,
 )
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.openai_like import OpenAILike
 from llama_index.postprocessor.flag_embedding_reranker import FlagEmbeddingReranker
 from llama_index.core.retrievers import QueryFusionRetriever
@@ -20,6 +17,7 @@ from llama_index.core import Settings as lli_Settings
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core import VectorStoreIndex
 from utils.logger import logger
+from utils.settings import settings
 
 log = logger.log
 
@@ -27,8 +25,6 @@ warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API
 import jieba  # noqa: E402
 
 logging.set_verbosity_error()
-
-load_dotenv()
 
 
 class UsageCollector:
@@ -160,13 +156,7 @@ def extract_usage(response: CompletionResponse):
 
 class QuestionNavigator:
     def __init__(self):
-        self.llm = OpenAILike(
-            api_base=os.getenv("LLM_API_BASE"),
-            api_key=os.getenv("LLM_API_KEY"),
-            model=(os.getenv("LLM_MODEL_SMALL") or "").strip()
-            or os.getenv("LLM_MODEL")
-            or "unknown",
-            is_chat_model=True,
+        self.llm = settings.create_small_llm(
             streaming=False,
             extra_body={"enable_thinking": False},
             temperature=0.0,
@@ -360,50 +350,17 @@ class RagEngine:
         )
 
     def _init_models(self):
-        lli_Settings.llm = OpenAILike(
-            api_base=os.getenv("LLM_API_BASE"),
-            api_key=os.getenv("LLM_API_KEY"),
-            model=os.getenv("LLM_MODEL"),
-            is_chat_model=True,
-            streaming=True,
-            temperature=0.0,
-            repeat_penalty=1.1,
-            context_window=32000,
-            max_tokens=4096,
-            system_prompt="""
-你是一个企业知识库问答助手。
-
-规则：
-1. 优先依据提供的上下文回答。
-2. 如果上下文没有明确答案，直接说“不知道”。
-3. 不要编造事实。
-4. 回答尽量准确、简洁。
-5. 直接回答内容，禁止说出“根据企业资料”。
-6. 尽量用列表的方式输出并列的内容。
-7. 如果文档存在歧义，指出歧义。
-8. 如果发现上下文有语义被截断的可能，提示用户`参考并以原始文档为准！`。
-""",
-        )
-
-        lli_Settings.embed_model = HuggingFaceEmbedding(
-            model_name=os.getenv("EMBEDDING_MODEL"),
-            device="cuda",
-            embed_batch_size=8,
-        )
+        settings.apply_to_llama_index()
 
     def _build_pipeline(self):
 
         log("[RAG] Loading storage...")
-        # 连接已有 Chroma 数据
-        # print("chroma path:", os.path.abspath("./storage/chroma_db"))
         chroma_client = chromadb.PersistentClient(path="./storage/chroma_db")
 
-        # 关键：要用同一个 collection 名
         chroma_collection = chroma_client.get_or_create_collection("docs")
 
         vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 
-        # 直接从 vector store 构建 index
         index = VectorStoreIndex.from_vector_store(
             vector_store,
             embed_model=lli_Settings.embed_model,
@@ -425,12 +382,12 @@ class RagEngine:
         log(f"[RAG] Loaded nodes: {len(all_nodes)}")
 
         vector_retriever = index.as_retriever(
-            similarity_top_k=int(os.getenv("RETRIEVAL_VECTOR_TOP_K", 15)),
+            similarity_top_k=settings.retrieval_vector_top_k,
         )
 
         bm25_retriever = BM25Retriever.from_defaults(
             nodes=all_nodes,
-            similarity_top_k=int(os.getenv("RETRIEVAL_BM25_TOP_K", 15)),
+            similarity_top_k=settings.retrieval_bm25_top_k,
             tokenizer=hybrid_tokenizer,
             language="zh",
             skip_stemming=True,
@@ -441,15 +398,15 @@ class RagEngine:
                 vector_retriever,
                 bm25_retriever,
             ],
-            similarity_top_k=int(os.getenv("VECTOR_SIMILARITY_TOP_K", 30)),
+            similarity_top_k=settings.vector_similarity_top_k,
             num_queries=1,
             mode="reciprocal_rerank",
             use_async=False,
         )
 
         self.reranker = FlagEmbeddingReranker(
-            model=os.getenv("RERANKER_MODEL"),
-            top_n=int(os.getenv("RETRIEVAL_RERANK_TOP_N_MAX", 5)),
+            model=settings.reranker_model,
+            top_n=settings.retrieval_rerank_top_n_max,
         )
 
     def dynamic_rerank_select(self, nodes, base_k=5, score_threshold=0.85, max_k=15):
@@ -516,9 +473,9 @@ class RagEngine:
 
         nodes_selected = self.dynamic_rerank_select(
             nodes=nodes_rerank,
-            base_k=int(os.getenv("RETRIEVAL_RERANK_TOP_N", 5)),
+            base_k=settings.retrieval_rerank_top_n,
             score_threshold=0.85,
-            max_k=int(os.getenv("RETRIEVAL_RERANK_TOP_N_MAX", 15)),
+            max_k=settings.retrieval_rerank_top_n_max,
         )
         log(f"[Dynamic] nodes: {len(nodes_selected)}")
 

@@ -1,14 +1,12 @@
-import os
 from llama_index.core import SimpleDirectoryReader
 from llama_index.core.schema import TextNode
 from parser.MarkdownHeadingAwareParser import MarkdownHeadingAwareParser
 from parser.MarkdownContentAwareParser import MarkdownContentAwareParser
 from indexing.metadata import enrich_metadata
-from dotenv import load_dotenv
+from utils.settings import settings
 
-load_dotenv()
-global_chunk_size = int(os.getenv("CHUNK_SIZE", 1000))
-global_chunk_overlap = int(os.getenv("CHUNK_OVERLAP", 80))
+global_chunk_size = settings.chunk_size
+global_chunk_overlap = settings.chunk_overlap
 
 
 class IndexBuilder:

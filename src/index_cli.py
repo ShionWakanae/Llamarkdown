@@ -1,16 +1,13 @@
 from rich import print
 from llama_index.core import VectorStoreIndex
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-import os
-from dotenv import load_dotenv
 import argparse
 from collections import Counter, defaultdict
 from indexing.builder import IndexBuilder
-from llama_index.core import Settings as lli_Settings
 import chromadb
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core import StorageContext
 from utils.logger import logger
+from utils.settings import settings
 
 log = logger.log
 
@@ -113,14 +110,8 @@ if __name__ == "__main__":
     debug_mode = args.debug
 
     log("Starting...")
-    load_dotenv()
 
-    lli_Settings.embed_model = HuggingFaceEmbedding(
-        model_name=os.getenv("EMBEDDING_MODEL"),
-        device="cuda",
-        embed_batch_size=32,
-    )
-    # print("chroma path:", os.path.abspath("./storage/chroma_db"))
+    settings.apply_to_llama_index()
     # 初始化 Chroma（持久化目录）
     chroma_client = chromadb.PersistentClient(path="./storage/chroma_db")
     # collection（类似表）
@@ -150,10 +141,7 @@ if __name__ == "__main__":
         nodes=final_nodes,
         storage_context=storage_context,
         show_progress=True,
-        embed_model=lli_Settings.embed_model,
+        embed_model=settings.create_embed_model(embed_batch_size=32),
     )
-
-    log("Persisting...")
-    print("count:", chroma_collection.count())
 
     log("All done ✅")
