@@ -302,6 +302,23 @@ def main():
                 </div>
                 """)
 
+                original_path = f"{ref_path}\\pdf\\{name}.pdf"
+                web_path = f"/static/ref_md/pdf/{name}.pdf"
+                # print(original_path)
+                # print(Path(original_path).exists())
+                # print(web_path)
+                if original_path and Path(original_path).exists():
+                    # ui.link(
+                    #     "🔗查看原始文档",
+                    #     web_path,
+                    #     new_tab=True,
+                    # )
+                    ui.button(
+                        icon="picture_as_pdf",
+                        text="请查看完整的原始文档获取更详细的信息",
+                        on_click=lambda: ui.navigate.to(web_path, new_tab=True),
+                    ).props("flat dense size=md")
+
                 ui.html(highlighted_html).classes("w-full").style(
                     """
                     flex: 1;
