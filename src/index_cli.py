@@ -111,7 +111,6 @@ if __name__ == "__main__":
 
     log("Starting...")
 
-    settings.apply_to_llama_index()
     # 初始化 Chroma（持久化目录）
     chroma_client = chromadb.PersistentClient(path="./storage/chroma_db")
     # collection（类似表）
@@ -141,7 +140,7 @@ if __name__ == "__main__":
         nodes=final_nodes,
         storage_context=storage_context,
         show_progress=True,
-        embed_model=settings.create_embed_model(embed_batch_size=32),
+        embed_model=settings.embed_model,
     )
 
     log("All done ✅")

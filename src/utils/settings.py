@@ -1,75 +1,72 @@
 import os
 from dotenv import load_dotenv
 
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.llms.openai_like import OpenAILike
+from llama_index.postprocessor.flag_embedding_reranker import (
+    FlagEmbeddingReranker,
+)
 
-class ShionSettings:
-    _instance = None
-    _initialized = False
 
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
+class Settings:
     def __init__(self):
-        if ShionSettings._initialized:
-            return
-        ShionSettings._initialized = True
-        self._load()
-
-    def _load(self):
         load_dotenv()
 
-        self.llm_api_base = os.getenv("LLM_API_BASE")
-        self.llm_api_key = os.getenv("LLM_API_KEY")
-        self.llm_model = os.getenv("LLM_MODEL")
-        raw_small = os.getenv("LLM_MODEL_SMALL", "")
-        self.llm_model_small = raw_small.strip() or None
+        #
+        # LLM
+        #
 
-        self.embedding_model = os.getenv("EMBEDDING_MODEL")
-        self.reranker_model = os.getenv("RERANKER_MODEL")
+        self.llm_api_base = self._required("LLM_API_BASE")
+        self.llm_api_key = self._required("LLM_API_KEY")
+
+        self.llm_model = self._required("LLM_MODEL")
+
+        self.llm_model_small = (
+            os.getenv("LLM_MODEL_SMALL", "").strip() or self.llm_model
+        )
+
+        #
+        # Embedding / Reranker
+        #
+
+        self.embedding_model = self._required("EMBEDDING_MODEL")
+        self.reranker_model = self._required("RERANKER_MODEL")
+
+        #
+        # Chunk
+        #
 
         self.chunk_size = int(os.getenv("CHUNK_SIZE", "1000"))
         self.chunk_overlap = int(os.getenv("CHUNK_OVERLAP", "80"))
 
+        #
+        # Retrieval
+        #
+
         self.retrieval_vector_top_k = int(os.getenv("RETRIEVAL_VECTOR_TOP_K", "15"))
+
         self.retrieval_bm25_top_k = int(os.getenv("RETRIEVAL_BM25_TOP_K", "15"))
+
         self.vector_similarity_top_k = int(os.getenv("VECTOR_SIMILARITY_TOP_K", "30"))
+
         self.retrieval_rerank_top_n = int(os.getenv("RETRIEVAL_RERANK_TOP_N", "5"))
-        self.retrieval_rerank_top_n_max = int(os.getenv("RETRIEVAL_RERANK_TOP_N_MAX", "10"))
+
+        self.retrieval_rerank_top_n_max = int(
+            os.getenv("RETRIEVAL_RERANK_TOP_N_MAX", "10")
+        )
+
+        #
+        # Other
+        #
 
         self.ref_file_path = os.getenv("REF_FILE_PATH", "")
         self.storage_secret = os.getenv("STORAGE_SECRET", "")
 
-        self._validate()
+        #
+        # Prompts
+        #
 
-    def _validate(self):
-        missing = []
-        if not self.llm_api_base:
-            missing.append("LLM_API_BASE")
-        if not self.llm_api_key:
-            missing.append("LLM_API_KEY")
-        if not self.llm_model:
-            missing.append("LLM_MODEL")
-        if not self.embedding_model:
-            missing.append("EMBEDDING_MODEL")
-        if not self.reranker_model:
-            missing.append("RERANKER_MODEL")
-        if missing:
-            raise ValueError(
-                f"Missing required environment variables: {', '.join(missing)}"
-            )
-
-    def apply_to_llama_index(self):
-        from llama_index.core import Settings as lli_Settings
-
-        lli_Settings.llm = self.create_llm(
-            streaming=True,
-            temperature=0.0,
-            repeat_penalty=1.1,
-            context_window=32000,
-            max_tokens=4096,
-            system_prompt="""
+        self.rag_system_prompt = """
 你是一个企业知识库问答助手。
 
 规则：
@@ -81,63 +78,60 @@ class ShionSettings:
 6. 尽量用列表的方式输出并列的内容。
 7. 如果文档存在歧义，指出歧义。
 8. 如果发现上下文有语义被截断的可能，提示用户`参考并以原始文档为准！`。
-""",
-        )
-        lli_Settings.embed_model = self.create_embed_model(embed_batch_size=8)
+""".strip()
 
-    def create_llm(self, **kwargs):
-        from llama_index.llms.openai_like import OpenAILike
+        self.rewrite_system_prompt = """
+你是一个分析用户输入的助手。
+""".strip()
 
-        defaults = dict(
+        #
+        # Initialize models
+        #
+
+        self.rag_llm = OpenAILike(
             api_base=self.llm_api_base,
             api_key=self.llm_api_key,
             model=self.llm_model,
             is_chat_model=True,
+            streaming=True,
+            temperature=0.0,
+            repeat_penalty=1.1,
+            context_window=32000,
+            max_tokens=4096,
+            system_prompt=self.rag_system_prompt,
         )
-        defaults.update(kwargs)
-        return OpenAILike(**defaults)
 
-    def create_small_llm(self, **kwargs):
-        from llama_index.llms.openai_like import OpenAILike
-
-        model = self.llm_model_small or self.llm_model or "unknown"
-        defaults = dict(
+        self.rewrite_llm = OpenAILike(
             api_base=self.llm_api_base,
             api_key=self.llm_api_key,
-            model=model,
+            model=self.llm_model_small,
             is_chat_model=True,
+            streaming=False,
+            temperature=0.0,
+            system_prompt=self.rewrite_system_prompt,
+            extra_body={
+                "enable_thinking": False,
+            },
         )
-        defaults.update(kwargs)
-        return OpenAILike(**defaults)
 
-    def create_embed_model(self, **kwargs):
-        from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-
-        defaults = dict(
+        self.embed_model = HuggingFaceEmbedding(
             model_name=self.embedding_model,
             device="cuda",
+            embed_batch_size=8,
         )
-        defaults.update(kwargs)
-        return HuggingFaceEmbedding(**defaults)
 
-    def to_dict(self):
-        return {
-            "llm_api_base": self.llm_api_base,
-            "llm_api_key": self.llm_api_key,
-            "llm_model": self.llm_model,
-            "llm_model_small": self.llm_model_small,
-            "embedding_model": self.embedding_model,
-            "reranker_model": self.reranker_model,
-            "chunk_size": self.chunk_size,
-            "chunk_overlap": self.chunk_overlap,
-            "retrieval_vector_top_k": self.retrieval_vector_top_k,
-            "retrieval_bm25_top_k": self.retrieval_bm25_top_k,
-            "vector_similarity_top_k": self.vector_similarity_top_k,
-            "retrieval_rerank_top_n": self.retrieval_rerank_top_n,
-            "retrieval_rerank_top_n_max": self.retrieval_rerank_top_n_max,
-            "ref_file_path": self.ref_file_path,
-            "storage_secret": self.storage_secret,
-        }
+        self.reranker = FlagEmbeddingReranker(
+            model=self.reranker_model,
+            top_n=self.retrieval_rerank_top_n_max,
+        )
+
+    def _required(self, key: str):
+        value = os.getenv(key)
+
+        if not value:
+            raise ValueError(f"Missing required environment variable: {key}")
+
+        return value
 
 
-settings = ShionSettings()
+settings = Settings()

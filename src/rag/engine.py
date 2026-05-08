@@ -7,13 +7,11 @@ from transformers.utils import logging
 from llama_index.core.base.llms.types import (
     CompletionResponse,
 )
-from llama_index.llms.openai_like import OpenAILike
 from llama_index.postprocessor.flag_embedding_reranker import FlagEmbeddingReranker
 from llama_index.core.retrievers import QueryFusionRetriever
 from llama_index.retrievers.bm25 import BM25Retriever
 from llama_index.core.schema import TextNode
 import chromadb
-from llama_index.core import Settings as lli_Settings
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core import VectorStoreIndex
 from utils.logger import logger
@@ -156,14 +154,7 @@ def extract_usage(response: CompletionResponse):
 
 class QuestionNavigator:
     def __init__(self):
-        self.llm = settings.create_small_llm(
-            streaming=False,
-            extra_body={"enable_thinking": False},
-            temperature=0.0,
-            system_prompt="""
-你是一个分析用户输入的助手。
-""",
-        )
+        self.llm = settings.rewrite_llm
 
     def analyze_query(self, question: str, engine):
         # fast classify
@@ -338,7 +329,6 @@ Windows平台对比Linux平台，用表格展示
 class RagEngine:
     def __init__(self):
         log("[RAG] Initializing...")
-        self._init_models()
         self._build_pipeline()
         self.navigator = QuestionNavigator()
         self.usage = UsageCollector()
@@ -348,9 +338,6 @@ class RagEngine:
         return (
             getattr(llm, "model", None) or getattr(llm, "model_name", None) or "unknown"
         )
-
-    def _init_models(self):
-        settings.apply_to_llama_index()
 
     def _build_pipeline(self):
 
@@ -363,7 +350,7 @@ class RagEngine:
 
         index = VectorStoreIndex.from_vector_store(
             vector_store,
-            embed_model=lli_Settings.embed_model,
+            embed_model=settings.embed_model,
         )
 
         collection_data = chroma_collection.get(include=["documents", "metadatas"])
@@ -398,6 +385,7 @@ class RagEngine:
                 vector_retriever,
                 bm25_retriever,
             ],
+            llm=settings.rewrite_llm,
             similarity_top_k=settings.vector_similarity_top_k,
             num_queries=1,
             mode="reciprocal_rerank",
@@ -530,7 +518,7 @@ class RagEngine:
 
         # final generate
         log("Answer starting")
-        stream = stream_with_usage(lli_Settings.llm, final_prompt, self.usage, self)
+        stream = stream_with_usage(settings.rag_llm, final_prompt, self.usage, self)
         return {
             "question_type": "RAG",
             "stream": stream,
