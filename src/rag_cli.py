@@ -6,6 +6,7 @@ from rich.text import Text
 from rich.live import Live
 from utils.AsyncSpinner import AsyncSpinner
 from utils.logger import logger
+import argparse
 
 
 class FilteredStderr:
@@ -26,18 +27,26 @@ class FilteredStderr:
 
 
 sys.stderr = FilteredStderr(sys.stderr)
-
 from rag.service import service  # noqa: E402
 
-
 log = logger.log
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "question",
+    help="Question text",
+)
 
+parser.add_argument(
+    "--ForceRAG",
+    action="store_true",
+    default=False,
+    help="Force full RAG pipeline",
+)
 
-if len(sys.argv) != 2:
-    print("Usage: python Sample_RAG_from_storage.py 'Your_Question...'")
-    sys.exit(1)
+args = parser.parse_args()
+quest_str = args.question
+force_rag = args.ForceRAG
 
-quest_str = sys.argv[1]
 log(f"Question: [bold bright_yellow]{quest_str}[/]", False)
 
 debug_data = None
@@ -50,7 +59,7 @@ with Live(Text("....", style="yellow"), refresh_per_second=2) as live:
     first = True
     source_nodes = []
     accumulated = ""
-    for event in service.stream_answer(quest_str):
+    for event in service.stream_answer(quest_str, force_rag):
         if event["type"] == "token":
             chunk = event["content"]
             if chunk:
