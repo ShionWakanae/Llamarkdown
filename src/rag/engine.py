@@ -340,21 +340,16 @@ class RagEngine:
         )
 
     def _build_pipeline(self):
-
         log("[RAG] Loading storage...")
         chroma_client = chromadb.PersistentClient(path="./storage/chroma_db")
-
         chroma_collection = chroma_client.get_or_create_collection("docs")
-
         vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
-
         index = VectorStoreIndex.from_vector_store(
             vector_store,
             embed_model=settings.embed_model,
         )
 
         collection_data = chroma_collection.get(include=["documents", "metadatas"])
-
         all_nodes = []
         for text, meta in zip(
             collection_data["documents"],
@@ -416,7 +411,6 @@ class RagEngine:
         return selected
 
     def query(self, question, force_rag):
-
         analysis = self.navigator.analyze_query(question, self)
         question_type = analysis.get(
             "question_type",
@@ -476,10 +470,7 @@ class RagEngine:
 
         context = "\n\n".join(context_parts)
 
-        #
         # build final prompt
-        #
-
         final_prompt = f"""
 请基于提供的企业资料回答用户问题。
 
