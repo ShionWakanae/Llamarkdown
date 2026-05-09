@@ -139,7 +139,9 @@ VECTOR_SIMILARITY_TOP_K=30                  # Number of similar content chunks t
 RETRIEVAL_RERANK_TOP_N=5                    # Number of results kept after reranking
 RETRIEVAL_RERANK_TOP_N_MAX = 10             # Max number of results after dynamic select
 
-REF_FILE_PATH="Path_To"                     # Path to reference documents (used for image rendering)
+REF_FILE_PATH="Path_To"                     # Path to reference documents (used for image rendering and locate source file)
+WEBUI_USERNAME=janedoe                      #WebUI username
+WEBUI_PASSWORD=123456                       #WebUI password
 ```
 
 ### (2) Build the Knowledge Base

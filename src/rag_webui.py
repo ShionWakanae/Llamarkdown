@@ -402,6 +402,9 @@ def main():
         if debug_panel_shown:
             right_column.style(
                 """
+                width: 24%;
+                height: 100%;
+                overflow: hidden;
                 display: block;
                 """
             )
@@ -412,6 +415,9 @@ def main():
             outer_container.style("max-width: 960px;")
             right_column.style(
                 """
+                width: 24%;
+                height: 100%;
+                overflow: hidden;
                 display: none;
                 """
             )

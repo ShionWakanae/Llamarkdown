@@ -113,7 +113,9 @@ VECTOR_SIMILARITY_TOP_K = 30                #相似内容召回数量。
 RETRIEVAL_RERANK_TOP_N = 5                  #重排序后召回数量。
 RETRIEVAL_RERANK_TOP_N_MAX = 10             #最大扩展召回数量。
 
-REF_FILE_PATH = "你的MD文件目录"             #参考文档路径（用于图像显示）。
+REF_FILE_PATH = "你的MD文件目录"              #参考文档路径（用于图像显示和定位源文件）。
+WEBUI_USERNAME=janedoe                      #WebUI用户名
+WEBUI_PASSWORD=123456                       #WebUI密码
 ```
 
 ### （2）建立知识库
