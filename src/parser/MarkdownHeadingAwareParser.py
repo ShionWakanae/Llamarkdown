@@ -1,5 +1,5 @@
 import re
-
+import copy
 from llama_index.core.schema import TextNode
 
 
@@ -55,7 +55,7 @@ class MarkdownHeadingAwareParser:
             text = doc.text or ""
             nodes = self._parse_document(
                 text=text,
-                metadata=doc.metadata,
+                metadata=copy.deepcopy(doc.metadata),
             )
 
             # update node length statistics
@@ -115,7 +115,7 @@ class MarkdownHeadingAwareParser:
             if not content.strip():
                 return
 
-            node_metadata = dict(metadata)
+            node_metadata = copy.deepcopy(metadata)
             node_metadata["line_start"] = current_start_line
             node_metadata["line_end"] = current_end_line
             if self.include_metadata:

@@ -1,5 +1,5 @@
 import re
-
+import copy
 from llama_index.core.schema import TextNode
 
 
@@ -83,7 +83,7 @@ class MarkdownContentAwareParser:
 
         lines = text.splitlines()
 
-        metadata = dict(node.metadata)
+        metadata = copy.deepcopy(node.metadata)
 
         base_line_start = metadata.get(
             "line_start",
@@ -112,7 +112,7 @@ class MarkdownContentAwareParser:
                 current_end = None
                 return
 
-            new_metadata = dict(metadata)
+            new_metadata = copy.deepcopy(metadata)
             new_metadata["line_start"] = current_start
             new_metadata["line_end"] = current_end
             new_metadata["block_type"] = "text"
@@ -148,7 +148,7 @@ class MarkdownContentAwareParser:
                 if current_lines:
                     flush_chunk()
 
-                structured_metadata = dict(metadata)
+                structured_metadata = copy.deepcopy(metadata)
                 structured_metadata["line_start"] = abs_start
                 structured_metadata["line_end"] = abs_end
                 structured_metadata["block_type"] = block_type

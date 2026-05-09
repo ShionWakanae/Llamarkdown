@@ -4,6 +4,7 @@ from parser.MarkdownHeadingAwareParser import MarkdownHeadingAwareParser
 from parser.MarkdownContentAwareParser import MarkdownContentAwareParser
 from indexing.metadata import enrich_metadata
 from utils.settings import settings
+import copy
 
 global_chunk_size = settings.chunk_size
 global_chunk_overlap = settings.chunk_overlap
@@ -31,7 +32,7 @@ class IndexBuilder:
 
     def _split_large_text_node(self, node):
         text = node.text
-        metadata = dict(node.metadata)
+        metadata = copy.deepcopy(node.metadata)
 
         max_size = global_chunk_size
         tolerance = global_chunk_overlap
@@ -47,7 +48,7 @@ class IndexBuilder:
             if not current_lines:
                 return
             chunk_text = "\n".join(current_lines)
-            new_meta = dict(metadata)
+            new_meta = copy.deepcopy(metadata)
             new_meta["line_start"] = base_line_start + current_start
             new_meta["line_end"] = base_line_start + end_idx
 
@@ -126,7 +127,7 @@ class IndexBuilder:
         if not data_lines:
             return [node]
 
-        metadata = dict(node.metadata)
+        metadata = copy.deepcopy(node.metadata)
         base_line_start = metadata.get(
             "line_start",
             0,
@@ -160,7 +161,7 @@ class IndexBuilder:
             chunk_text = "\n".join(chunk_lines)
             first_data_line = separator_idx + 1 + current_start_idx
             last_data_line = separator_idx + end_idx
-            new_metadata = dict(metadata)
+            new_metadata = copy.deepcopy(metadata)
             new_metadata["line_start"] = base_line_start + first_data_line
             new_metadata["line_end"] = base_line_start + last_data_line + 1
             new_metadata["table_row_start"] = current_start_idx
@@ -267,7 +268,7 @@ class IndexBuilder:
             max_node_len = 0
             min_node_len = None
 
-            for node in candidate_nodes:
+            for node in final_nodes:
                 node_len = len(node.text)
                 if node_len > max_node_len:
                     max_node_len = node_len
@@ -333,10 +334,7 @@ class IndexBuilder:
         def append_candidate(text, metadata, header):
             enriched_text = f"[SECTION]\n{header}\n\n[CONTENT]\n{text}"
             candidate_nodes.append(
-                TextNode(
-                    text=enriched_text,
-                    metadata=metadata,
-                )
+                TextNode(text=enriched_text, metadata=copy.deepcopy(metadata))
             )
 
         split_count = 0
@@ -420,7 +418,8 @@ class IndexBuilder:
                 candidate_nodes
             ):
                 nxt = candidate_nodes[j]
-
+                if current.metadata.get("file_path") != nxt.metadata.get("file_path"):
+                    break
                 if len(nxt.text.strip()) < 1:
                     j += 1
                     continue
@@ -447,7 +446,7 @@ class IndexBuilder:
                 j += 1
 
             # metadata based on merged range
-            base_meta = dict(current.metadata)
+            base_meta = copy.deepcopy(current.metadata)
 
             # update line range
             if len(merged_nodes) > 1:

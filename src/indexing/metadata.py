@@ -1,5 +1,6 @@
 import yaml
 import re
+import copy
 
 with open(
     "metadata_rules.yaml",
@@ -23,7 +24,7 @@ def enrich_metadata(node):
         "",
     ).lower()
 
-    meta = dict(node.metadata)
+    meta = copy.deepcopy(node.metadata)
 
     #
     # defaults

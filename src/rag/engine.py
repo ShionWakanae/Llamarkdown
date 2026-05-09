@@ -3,6 +3,7 @@ import json
 import traceback
 import warnings
 from pathlib import Path
+import copy
 from rich import print
 from transformers.utils import logging
 from llama_index.core.base.llms.types import (
@@ -477,7 +478,7 @@ class RagEngine:
 
                 filtered_node = TextNode(
                     text=filtered_text,
-                    metadata=raw_node.metadata,
+                    metadata=copy.deepcopy(raw_node.metadata),
                 )
 
                 result.append(
@@ -619,7 +620,21 @@ class RagEngine:
 
         # retrieve
         nodes_retriever = self.retriever.retrieve(retrieval_query)
-        log(f"[Retrieve] nodes: {len(nodes_retriever)}")
+        may_dup_count = len(nodes_retriever)
+        unique_nodes = {}
+
+        for node in nodes_retriever:
+            meta = node.metadata
+            key = (
+                meta.get("file_path"),
+                meta.get("line_start"),
+                meta.get("line_end"),
+            )
+            if key not in unique_nodes:
+                unique_nodes[key] = node
+
+        nodes_retriever = list(unique_nodes.values())
+        log(f"[Retrieve] nodes: {len(nodes_retriever)}/{may_dup_count}")
 
         # rerank
         nodes_rerank = self.reranker.postprocess_nodes(
