@@ -2,6 +2,7 @@ import re
 import json
 import traceback
 import warnings
+from pathlib import Path
 from rich import print
 from transformers.utils import logging
 from llama_index.core.base.llms.types import (
@@ -351,7 +352,7 @@ class RagEngine:
         )
 
         # lower统一
-        return list(set(t.lower() for t in terms))
+        return list(dict.fromkeys(t.lower() for t in terms))
 
     def _index_exact_terms(self, node: TextNode):
         """
@@ -528,6 +529,15 @@ class RagEngine:
             self._index_exact_terms(node)
         log(f"[RAG] Loaded nodes: {len(all_nodes)}")
 
+        # stable exact index order
+        for term in self.exact_index:
+            self.exact_index[term].sort(
+                key=lambda x: (
+                    x.metadata.get("file_path", ""),
+                    x.node_id,
+                )
+            )
+
         vector_retriever = index.as_retriever(
             similarity_top_k=settings.retrieval_vector_top_k,
         )
@@ -668,7 +678,7 @@ class RagEngine:
             text = node.node.text.strip()
             context_parts.append(text)
 
-        context = "\n --- \n".join(context_parts)
+        context = "\n\n".join(context_parts)
 
         # build final prompt
         final_prompt = f"""
@@ -709,6 +719,7 @@ class RagEngine:
 
         # final generate
         log(f"Answer starting, prompt len: {len(final_prompt)}")
+        # Path("d:\\debug.txt").write_text(final_prompt, encoding="utf-8")
         stream = stream_with_usage(settings.rag_llm, final_prompt, self.usage, self)
         return {
             "question_type": "RAG",
