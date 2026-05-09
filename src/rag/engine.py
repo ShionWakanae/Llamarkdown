@@ -359,8 +359,52 @@ class RagEngine:
         """
         text = node.text
         terms = self.extract_exact_terms(text)
+
         for term in terms:
             self.exact_index[term].append(node)
+
+    def extract_matching_sections(
+        self,
+        text: str,
+        terms: list[str],
+    ):
+        """
+        从 node 中，仅提取命中 term 的 [SECTION] 块
+        """
+
+        if not text:
+            return ""
+
+        # 按 SECTION 切分
+        sections = re.split(
+            r"(?=\[SECTION\])",
+            text,
+        )
+
+        matched_sections = []
+
+        for section in sections:
+            section_lower = section.lower()
+
+            matched = False
+
+            for term in terms:
+                # term 精确匹配
+                pattern = re.compile(
+                    rf"(?<![A-Za-z0-9_])"
+                    rf"{re.escape(term)}"
+                    rf"(?![A-Za-z0-9_])",
+                    re.IGNORECASE,
+                )
+
+                if pattern.search(section_lower):
+                    matched = True
+                    break
+
+            if matched:
+                matched_sections.append(section.strip())
+
+        return "\n\n".join(matched_sections)
 
     def exact_search(
         self,
@@ -373,12 +417,16 @@ class RagEngine:
         精确英文术语召回
         只作为 supplement recall
         """
+
         terms = self.extract_exact_terms(retrieval_query)
+
         if not terms:
             return []
 
         log(f"[Exact] terms: {terms}")
+
         existing_ids = set()
+
         for node in existing_nodes:
             try:
                 existing_ids.add(node.node.node_id)
@@ -386,11 +434,13 @@ class RagEngine:
                 pass
 
         result = []
+
         seen_node_ids = set()
         seen_doc_ids = defaultdict(int)
 
         for term in terms:
             matched_nodes = self.exact_index.get(term, [])
+
             added_this_term = 0
 
             for raw_node in matched_nodes:
@@ -412,21 +462,41 @@ class RagEngine:
                 if seen_doc_ids[doc_id] >= 2:
                     continue
 
+                # 仅提取命中的 SECTION
+                filtered_text = self.extract_matching_sections(
+                    raw_node.text,
+                    terms,
+                )
+
+                if not filtered_text.strip():
+                    continue
+
                 seen_doc_ids[doc_id] += 1
                 seen_node_ids.add(node_id)
 
-                # 包装成 NodeWithScore
-                from llama_index.core.schema import NodeWithScore
+                filtered_node = TextNode(
+                    text=filtered_text,
+                    metadata=raw_node.metadata,
+                )
 
-                result.append(NodeWithScore(node=raw_node, score=1.0))
+                result.append(
+                    NodeWithScore(
+                        node=filtered_node,
+                        score=1.0,
+                    )
+                )
+
                 added_this_term += 1
+
                 if added_this_term >= max_per_term:
                     break
 
                 if len(result) >= max_total:
                     break
 
-        log(f"[Exact] supplement nodes: {len(result)}")
+            if len(result) >= max_total:
+                break
+
         return result
 
     def _build_pipeline(self):
@@ -572,8 +642,23 @@ class RagEngine:
                 existing_nodes=nodes_selected,
                 max_total=supplement_limit,
             )
-            nodes_selected.extend(exact_nodes)
             log(f"[Exact] nodes: {len(exact_nodes)}")
+
+            # 找到第一个负分位置
+            insert_index = len(nodes_selected)
+
+            for i, node in enumerate(nodes_selected):
+                if node.score < 0:
+                    insert_index = i
+                    break
+
+            # 插入 exact nodes
+            nodes_selected = (
+                nodes_selected[:insert_index]
+                + exact_nodes
+                + nodes_selected[insert_index:]
+            )
+
             log(f"[Final] nodes: {len(nodes_selected)}")
 
         # build context
@@ -623,7 +708,7 @@ class RagEngine:
 """
 
         # final generate
-        log("Answer starting")
+        log(f"Answer starting, prompt len: {len(final_prompt)}")
         stream = stream_with_usage(settings.rag_llm, final_prompt, self.usage, self)
         return {
             "question_type": "RAG",
