@@ -136,7 +136,7 @@ def build_highlighted_markdown(content, hits):
         # highlight line
         if idx in highlighted:
             # avoid empty line highlight issue
-            if line.strip():
+            if line.strip() and not line.lstrip().startswith("#"):
                 if line.lstrip().startswith("|"):
                     parts = line.split("|")
                     # 保留原始结构，包括首尾的空字符串
@@ -175,11 +175,23 @@ def build_highlighted_markdown(content, hits):
                         marked_line = "".join(result_parts)
                         output.append(marked_line)
                 else:
+                    m = re.match(
+                        r"^(\s*(?:\*|-|\+|\d+[.)])\s+)(.*)",
+                        line,
+                    )
                     if not first_hit_done:
-                        output.append(f'<mark id="first-hit">{line}</mark>')
+                        if m:
+                            output.append(
+                                f'{m.group(1)} <mark id="first-hit">{m.group(2)}</mark>'
+                            )
+                        else:
+                            output.append(f'<mark id="first-hit">{line}</mark>')
                         first_hit_done = True
                     else:
-                        output.append(f"<mark>{line}</mark>")
+                        if m:
+                            output.append(f"{m.group(1)} <mark>{m.group(2)}</mark>")
+                        else:
+                            output.append(f"<mark>{line}</mark>")
             else:
                 output.append(line)
 
