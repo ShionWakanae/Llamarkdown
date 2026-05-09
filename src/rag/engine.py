@@ -10,10 +10,11 @@ from llama_index.core.base.llms.types import (
 from llama_index.postprocessor.flag_embedding_reranker import FlagEmbeddingReranker
 from llama_index.core.retrievers import QueryFusionRetriever
 from llama_index.retrievers.bm25 import BM25Retriever
-from llama_index.core.schema import TextNode
+from llama_index.core.schema import NodeWithScore, TextNode
 import chromadb
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core import VectorStoreIndex
+from collections import defaultdict
 from utils.logger import logger
 from utils.settings import settings
 
@@ -339,6 +340,95 @@ class RagEngine:
             getattr(llm, "model", None) or getattr(llm, "model_name", None) or "unknown"
         )
 
+    def extract_exact_terms(self, text: str):
+        """
+        提取已经被 QueryRewrite 保留下来的英文术语
+        """
+
+        terms = re.findall(
+            r"\b[A-Za-z][A-Za-z0-9_]+\b",
+            text,
+        )
+
+        # lower统一
+        return list(set(t.lower() for t in terms))
+
+    def _index_exact_terms(self, node: TextNode):
+        """
+        建立 term -> node 的倒排索引
+        """
+        text = node.text
+        terms = self.extract_exact_terms(text)
+        for term in terms:
+            self.exact_index[term].append(node)
+
+    def exact_search(
+        self,
+        retrieval_query: str,
+        existing_nodes,
+        max_per_term=10,
+        max_total=30,
+    ):
+        """
+        精确英文术语召回
+        只作为 supplement recall
+        """
+        terms = self.extract_exact_terms(retrieval_query)
+        if not terms:
+            return []
+
+        log(f"[Exact] terms: {terms}")
+        existing_ids = set()
+        for node in existing_nodes:
+            try:
+                existing_ids.add(node.node.node_id)
+            except Exception:
+                pass
+
+        result = []
+        seen_node_ids = set()
+        seen_doc_ids = defaultdict(int)
+
+        for term in terms:
+            matched_nodes = self.exact_index.get(term, [])
+            added_this_term = 0
+
+            for raw_node in matched_nodes:
+                node_id = raw_node.node_id
+
+                if node_id in existing_ids:
+                    continue
+
+                if node_id in seen_node_ids:
+                    continue
+
+                # 文档级限流
+                doc_id = (
+                    raw_node.metadata.get("file_path")
+                    or raw_node.metadata.get("source")
+                    or "unknown"
+                )
+
+                if seen_doc_ids[doc_id] >= 2:
+                    continue
+
+                seen_doc_ids[doc_id] += 1
+                seen_node_ids.add(node_id)
+
+                # 包装成 NodeWithScore
+                from llama_index.core.schema import NodeWithScore
+
+                result.append(NodeWithScore(node=raw_node, score=1.0))
+                added_this_term += 1
+                if added_this_term >= max_per_term:
+                    break
+
+                if len(result) >= max_total:
+                    break
+
+        log(f"[Exact] supplement nodes: {len(result)}")
+        return result
+
     def _build_pipeline(self):
         log("[RAG] Loading storage...")
         chroma_client = chromadb.PersistentClient(path="./storage/chroma_db")
@@ -350,17 +440,22 @@ class RagEngine:
         )
 
         collection_data = chroma_collection.get(include=["documents", "metadatas"])
+        self.all_nodes = []
+        self.exact_index = defaultdict(list)
         all_nodes = []
         for text, meta in zip(
             collection_data["documents"],
             collection_data["metadatas"],
         ):
-            all_nodes.append(
-                TextNode(
-                    text=text,
-                    metadata=meta or {},
-                )
+            node = TextNode(
+                text=text,
+                metadata=meta or {},
             )
+
+            all_nodes.append(node)
+            self.all_nodes.append(node)
+
+            self._index_exact_terms(node)
         log(f"[RAG] Loaded nodes: {len(all_nodes)}")
 
         vector_retriever = index.as_retriever(
@@ -453,22 +548,42 @@ class RagEngine:
         )
         log(f"[Rerank] nodes: {len(nodes_rerank)}")
 
-        nodes_selected = self.dynamic_rerank_select(
-            nodes=nodes_rerank,
-            base_k=settings.retrieval_rerank_top_n,
-            score_threshold=0.85,
-            max_k=settings.retrieval_rerank_top_n_max,
-        )
-        log(f"[Dynamic] nodes: {len(nodes_selected)}")
+        top_score = nodes_rerank[0].score if nodes_rerank else -999
+        nodes_selected = []
+        log(f"[Rerank] top score: {top_score}", False)
+        if top_score > 0:
+            nodes_selected = self.dynamic_rerank_select(
+                nodes=nodes_rerank,
+                base_k=settings.retrieval_rerank_top_n,
+                score_threshold=0.85,
+                max_k=settings.retrieval_rerank_top_n_max,
+            )
+            log(f"[Dynamic] nodes: {len(nodes_selected)}")
+
+        # retrieval低质量
+        if not nodes_selected or (
+            nodes_selected[0].score < 1 and nodes_selected[-1].score < 0
+        ):
+            nodes_selected = nodes_rerank[: settings.retrieval_rerank_top_n]
+            supplement_limit = settings.retrieval_rerank_top_n_max - len(nodes_selected)
+
+            exact_nodes = self.exact_search(
+                retrieval_query,
+                existing_nodes=nodes_selected,
+                max_total=supplement_limit,
+            )
+            nodes_selected.extend(exact_nodes)
+            log(f"[Exact] nodes: {len(exact_nodes)}")
+            log(f"[Final] nodes: {len(nodes_selected)}")
 
         # build context
         context_parts = []
 
-        for i, node in enumerate(nodes_selected):
+        for _, node in enumerate[NodeWithScore](nodes_selected):
             text = node.node.text.strip()
             context_parts.append(text)
 
-        context = "\n\n".join(context_parts)
+        context = "\n --- \n".join(context_parts)
 
         # build final prompt
         final_prompt = f"""
