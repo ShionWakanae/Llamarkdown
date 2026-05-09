@@ -80,9 +80,9 @@ def render_markdown_html(md_str: str) -> str:
         ],
     )
     return f"""
-<div class="final-markdown">
-    {rendered_html}
-</div>"""
+            <div class="final-markdown">
+                {rendered_html}
+            </div>"""
 
 
 def read_file_by_path(path):
@@ -175,23 +175,32 @@ def build_highlighted_markdown(content, hits):
                         marked_line = "".join(result_parts)
                         output.append(marked_line)
                 else:
-                    m = re.match(
-                        r"^(\s*(?:\*|-|\+|\d+[.)])\s+)(.*)",
-                        line,
-                    )
-                    if not first_hit_done:
-                        if m:
+                    # 检查当前行是否为列表项
+                    m = re.match(r"^(\s*(?:\*|-|\+|\d+[.)])\s+)(.*)", line)
+                    if m:
+                        # 检查上一行是否为列表项
+                        prev_line = output[-1] if output else ""
+                        prev_is_list = re.match(
+                            r"^\s*(?:\*|-|\+|\d+[.)])\s+",
+                            prev_line,
+                        )
+                        if prev_line.strip() and not prev_is_list:
+                            output.append("")
+
+                        # 判断是否为第一个高亮项
+                        if not first_hit_done:
                             output.append(
-                                f'{m.group(1)} <mark id="first-hit">{m.group(2)}</mark>'
+                                f"{m.group(1)}=={m.group(2)}==<mark id='first-hit'/>"
                             )
+                            first_hit_done = True
                         else:
-                            output.append(f'<mark id="first-hit">{line}</mark>')
-                        first_hit_done = True
+                            output.append(f"{m.group(1)}=={m.group(2)}==")
                     else:
-                        if m:
-                            output.append(f"{m.group(1)} <mark>{m.group(2)}</mark>")
+                        if not first_hit_done:
+                            output.append(f'=={line}== <mark id="first-hit"/>')
+                            first_hit_done = True
                         else:
-                            output.append(f"<mark>{line}</mark>")
+                            output.append(f"=={line}==")
             else:
                 output.append(line)
 
