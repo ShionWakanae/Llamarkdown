@@ -424,7 +424,7 @@ class RagEngine:
         if not terms:
             return []
 
-        log(f"[Exact] terms: {terms}")
+        log(f"[Exact] terms: {terms}", False)
 
         existing_ids = set()
 
@@ -630,7 +630,7 @@ class RagEngine:
 
         top_score = nodes_rerank[0].score if nodes_rerank else -999
         nodes_selected = []
-        log(f"[Rerank] top score: {top_score}", False)
+        # log(f"[Rerank] top score: {top_score}", False)
         if top_score > 0:
             nodes_selected = self.dynamic_rerank_select(
                 nodes=nodes_rerank,
@@ -682,39 +682,44 @@ class RagEngine:
 
         # build final prompt
         final_prompt = f"""
-请基于提供的企业资料回答用户问题。
+你是一个企业知识库问答助手，请回答用户问题。
 
 规则：
-
-1. 优先依据企业资料回答。
-2. 如果企业资料没有明确答案，直接回答“不知道”。
-3. 不要编造内容。
-4. 保持答案准确。
-5. 如果企业资料存在不完整情况，提醒用户参考原始文档。
-
+1. 优先依据提供的上下文回答
+2. 如果上下文没有明确答案，直接说`不知道。`
+3. 如果无明确答案但仍需提醒用户，需先说`不知道。`后再开始提醒
+4. 不要编造事实
+5. 不要在回答中提及用户的输出要求
+5. 回答尽量准确、简洁
+6. 直接回答内容，不要在回答前说类似`根据企业资料`的内容
+7. 尽量用列表的方式输出并列的内容
+8. 如果文档存在歧义，指出歧义
+10. 如果发现上下文有语义被截断的可能，提示用户`以参考文档为准！`
 ---
-
 用户真实意图：
 
-{user_intent}
+`{user_intent}`
 
 ---
-
 输出要求：
 
-{presentation_intent}
+`{presentation_intent}`
 
 ---
+用户问题：
 
+`{question}`
+
+---
 企业资料：
 
 {context}
 
 ---
-
-用户问题：
-
-{question}
+严格依据资料回答。
+禁止使用外部知识。
+禁止寒暄。
+直接输出结论。
 """
 
         # final generate
