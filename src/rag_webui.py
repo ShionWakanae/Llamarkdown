@@ -9,10 +9,6 @@ import markdown
 from nicegui import ui
 from nicegui import app
 from nicegui import context
-from fastapi.responses import HTMLResponse
-import secrets
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from rich import print
 import re
 from rag.formatter import build_reference_files
@@ -40,35 +36,19 @@ class FilteredStderr:
 
 sys.stderr = FilteredStderr(sys.stderr)
 
-
 from rag.service import service  # noqa: E402
-
 
 log = logger.log
 
-security = HTTPBasic()
+
+def auth_guard():
+    if not app.storage.user.get("authenticated", False):
+        ui.navigate.to("/login")
 
 
-def verify_password(credentials: HTTPBasicCredentials = Depends(security)):
-
-    correct_username = secrets.compare_digest(
-        credentials.username,
-        settings.webui_username,
-    )
-
-    correct_password = secrets.compare_digest(
-        credentials.password,
-        settings.webui_password,
-    )
-
-    if not (correct_username and correct_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Unauthorized",
-            headers={"WWW-Authenticate": "Basic"},
-        )
-
-    return credentials.username
+def logout():
+    app.storage.user.clear()
+    ui.navigate.to("/login")
 
 
 app.add_static_files("/static/js", "./src/ui/js")
@@ -215,7 +195,8 @@ def auto_scroll_chat(client):
 
 
 @ui.page("/")
-def main(username: str = Depends(verify_password)):
+def main():
+    auth_guard()
     chat_history = app.storage.user.setdefault("chat_history", [])
     debug_panel_shown = False
 
@@ -457,9 +438,7 @@ def main(username: str = Depends(verify_password)):
             ui.label("ver 0.1.1").style(
                 "font-size: 12px; color: #888; margin-right: 12px;"
             )
-            ui.button().props('icon="logout" round').on(
-                "click", lambda: ui.navigate.to("/logout")
-            )
+            ui.button(icon="logout", on_click=logout).props("flat round")
 
         initial_container_height = "100%" if chat_history else "60%"
         outer_container = (
@@ -997,36 +976,61 @@ def main(username: str = Depends(verify_password)):
             debug_button.on("click", show_hide_debug_panel)
 
 
-@app.get("/logout")
-def logout():
-    return HTMLResponse(
-        """
-    <html>
-    <body style="
-        background:#111;
-        color:white;
-        font-family:sans-serif;
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        height:100vh;
-        flex-direction:column;
-    ">
-        <h2>已退出登录</h2>
-        <p>关闭浏览器后认证通常会失效。</p>
+@ui.page("/login")
+def login():
+    ui.add_head_html("""
+        <link rel="stylesheet" href="/static/css/app.css">
+    """)
+    if app.storage.user.get("authenticated", False):
+        ui.navigate.to("/")
+        return
 
-        <a href="/" style="
-            color:#4f8cff;
-            margin-top:20px;
-        ">
-            返回首页
-        </a>
-    </body>
-    </html>
-    """,
-        status_code=401,
-        headers={"WWW-Authenticate": "Basic"},
-    )
+    def try_login():
+        if (
+            username.value == settings.webui_username
+            and password.value == settings.webui_password
+        ):
+            app.storage.user["authenticated"] = True
+            ui.navigate.to("/")
+        else:
+            ui.notify("用户名或密码错误", color="negative", position="center")
+
+    with (
+        ui.column()
+        .classes("absolute-center items-center w-80 gap-4")
+        .style("""
+        transform: translate(-50%, -30%);
+    """)
+    ):
+        ui.image("images/logo.png").style("""
+                        width: 128px;
+                        height: 128px;
+                        opacity: 0.9;
+                    """)
+        ui.label("企业知识库").style("""
+            font-size:28px;
+            font-weight:700;
+        """)
+
+        username = ui.input("用户名").props("outlined").classes("w-full")
+        password = (
+            ui.input(
+                "密码",
+                password=True,
+                password_toggle_button=True,
+            )
+            .props("outlined")
+            .classes("w-full")
+        )
+        password.on(
+            "keydown.enter",
+            lambda e: try_login(),
+        )
+
+        ui.button(
+            "登录",
+            on_click=try_login,
+        ).classes("w-full")
 
 
 # run app
