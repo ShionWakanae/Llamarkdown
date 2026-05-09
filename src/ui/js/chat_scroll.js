@@ -74,7 +74,7 @@
         if (!area || !container) return;
 
         var hasChildren = area.children.length > 0;
-        container.style.height = hasChildren ? '100%' : '50%';
+        container.style.height = hasChildren ? '100%' : '60%';
 
         const emptyState = getEmptyState();
         if (emptyState) {

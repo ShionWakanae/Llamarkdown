@@ -369,14 +369,13 @@ def main():
         </style>
         """)
     ui.add_head_html("""
-<link rel="stylesheet" href="/static/css/app.css">
-""")
-    ui.add_body_html("""
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <link rel="stylesheet" href="/static/css/app.css">
     """)
     ui.add_body_html("""
-    <script src="/static/js/chat_scroll.js"></script>
-    </script>
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    """)
+    ui.add_body_html("""
+        <script src="/static/js/chat_scroll.js"></script>
     """)
 
     ui.dark_mode(True)
@@ -393,26 +392,16 @@ def main():
         if debug_panel_shown:
             right_column.style(
                 """
-                width: 30%;
-                height: 100%;
-                overflow: hidden;
                 display: block;
                 """
             )
-
-            left_column.style(
-                """
-                flex: 1;
-                height: 100%;
-                overflow: hidden;
-                """
-            )
+            outer_container.style(remove="max-width: 960px;")
+            outer_container.style("max-width: 1280px;")
         else:
+            outer_container.style(remove="max-width: 1280px;")
+            outer_container.style("max-width: 960px;")
             right_column.style(
                 """
-                width: 30%;
-                height: 100%;
-                overflow: hidden;
                 display: none;
                 """
             )
@@ -436,24 +425,24 @@ def main():
                     ui.button(q, on_click=lambda msg=q: send_message(msg)).props(
                         "flat dense size=sm"
                     )
-            ui.label("ver 0.0.4").style(
+            ui.label("ver 0.1.1").style(
                 "font-size: 12px; color: #888; margin-right: 12px;"
             )
 
-        initial_container_height = "100%" if chat_history else "50%"
+        initial_container_height = "100%" if chat_history else "60%"
         outer_container = (
             ui.row()
             .classes("w-full no-wrap outer-container")
             .style(
                 f"""
-            height: {initial_container_height};
-            max-width: 1440px;
-            margin: 0 auto;
-            padding: 4px;
-            gap: 4px;
-            overflow: hidden;
-            transition: height 0.3s ease;
-            """
+                height: {initial_container_height};
+                max-width: 960px;
+                margin: 0 auto;
+                padding: 4px;
+                gap: 4px;
+                overflow: hidden;
+                transition: height 0.3s ease;
+                """
             )
         )
         with outer_container:
@@ -568,7 +557,7 @@ def main():
                             with ui.chat_message(
                                 sent=False,
                                 name="🧠历史回复",
-                            ).style("max-width: 85%;"):
+                            ).style("max-width: 95%;"):
                                 html = render_markdown_html(item["answer"])
                                 message_id += 1
                                 ui.html(html).props(
@@ -589,7 +578,7 @@ def main():
                                 with (
                                     ui.row()
                                     .classes("gap-0 mt-0 mb-0")
-                                    .style("max-width: 85%;")
+                                    .style("max-width: 95%;")
                                 ):
                                     for source in item["sources"]:
                                         ui.button(
@@ -607,7 +596,7 @@ def main():
             # right
             right_column = ui.column().style(
                 """
-                width: 30%;
+                width: 24%;
                 height: 100%;
                 overflow: hidden;
                 display: none;
@@ -724,7 +713,7 @@ def main():
                             llm_msg = ui.chat_message(
                                 sent=False,
                                 name="\U00002728智能助理",
-                            ).style("max-width: 85%;")
+                            ).style("max-width: 95%;")
 
                             with llm_msg:
                                 wait_html = markdown.markdown(
@@ -749,7 +738,7 @@ def main():
                                 )
 
                             sources_container = (
-                                ui.row().classes("gap-0 mt-0 mb-0").style("width: 85%;")
+                                ui.row().classes("gap-0 mt-0 mb-0").style("width: 95%;")
                             )
                             action_container = ui.row().classes("gap-2 mt-0 mb-0")
                             auto_scroll_chat(client)
@@ -915,7 +904,7 @@ def main():
                     if should_show_sources:
                         shown_files = set()
                         with sources_container:
-                            with ui.row().classes("gap-2 mt-0").style("width: 85%;"):
+                            with ui.row().classes("gap-2 mt-0").style("width: 95%;"):
                                 for file_name, file_info in file_map.items():
                                     file_path = file_info["path"]
                                     hits = file_info["hits"]
