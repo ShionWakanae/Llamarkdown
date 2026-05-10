@@ -41,6 +41,26 @@ from rag.service import service  # noqa: E402
 log = logger.log
 
 
+def get_speed_str(total_ms: float) -> str:
+    if total_ms < 500:
+        speed_str = "⚡"
+    elif total_ms < 2000:
+        speed_str = "🚀"
+    elif total_ms < 5000:
+        speed_str = "✈️"
+    elif total_ms < 10000:
+        speed_str = "🚅"
+    elif total_ms < 20000:
+        speed_str = "🚗"
+    elif total_ms < 40000:
+        speed_str = "🏃"
+    elif total_ms < 60000:
+        speed_str = "🚶"
+    else:
+        speed_str = "🐢"
+    return speed_str
+
+
 def auth_guard():
     if not app.storage.user.get("authenticated", False):
         ui.navigate.to("/login")
@@ -231,6 +251,16 @@ def main():
         nonlocal debug_panel_shown
         debug_panel_shown = True
         show_hide_debug_panel()
+        debug_button.disable()
+        debug_button.style("""
+            filter: grayscale(1);
+        """)
+        debug_panel.content = """
+        <div class="debug-panel">
+            waiting for data...
+        </div>
+        """
+        debug_panel.update()
 
     def confirm_clear():
         with ui.dialog().props("persistent") as dialog:
@@ -472,7 +502,7 @@ def main():
             .classes("w-full no-wrap outer-container")
             .style(
                 """
-                height: "100%";
+                height: 100%;
                 max-width: 960px;
                 margin: 0 auto;
                 padding: 4px;
@@ -729,8 +759,20 @@ def main():
 
                     input_box.disable()
                     nonlocal debug_panel_shown
+                    debug_panel_shown = True
+                    show_hide_debug_panel()
+                    debug_button.disable()
+                    debug_button.style("""
+                        filter: grayscale(1);
+                    """)
                     log(f"Question: {message}", False)
-
+                    # reset status
+                    debug_panel.content = """
+                    <div class="debug-panel">
+                        waiting for data...
+                    </div>
+                    """
+                    debug_panel.update()
                     # messages
                     qtime = f"🕐{datetime.datetime.now().strftime('%H:%M:%S')}"
                     with chat_scroll:
@@ -778,14 +820,6 @@ def main():
                             )
                             action_container = ui.row().classes("gap-2 mt-0 mb-0")
                             auto_scroll_chat(client)
-
-                    # reset status
-                    debug_panel.content = """
-                    <div class="debug-panel">
-                        waiting for data...
-                    </div>
-                    """
-                    debug_panel.update()
 
                     # state
                     partial_text = ""
@@ -843,6 +877,10 @@ def main():
                             debug_html = build_debug_html(event["content"])
                             debug_panel.content = debug_html
                             debug_panel.update()
+                            debug_button.enable()
+                            debug_button.style("""
+                                filter: none;
+                            """)
 
                         # status
                         elif event["type"] == "status":
@@ -920,26 +958,12 @@ def main():
                         source_hint = "📖"
 
                     atime = f"🕐{datetime.datetime.now().strftime('%H:%M:%S')}"
-                    total_ms = float(timing.get("total_ms", 0))
-                    speed_str = "⚡"
-                    if total_ms < 1000:
-                        speed_str = "⚡"
-                    elif total_ms < 2000:
-                        speed_str = "🚀"
-                    elif total_ms < 5000:
-                        speed_str = "✈️"
-                    elif total_ms < 10000:
-                        speed_str = "🚗"
-                    elif total_ms < 20000:
-                        speed_str = "🏃"
-                    elif total_ms < 30000:
-                        speed_str = "🚶"
-                    else:
-                        speed_str = "🐢"
+                    total_ms = timing.get("total_ms", 0)
+                    speed_str = get_speed_str(float(total_ms))
                     footer = f"""
                         <br>
                         <div style="text-align:right; font-size:12px; color:#888888 !important;">
-                        {source_hint}&nbsp;&nbsp;&nbsp;&nbsp; {speed_str}{timing.get("total_ms", 0)}ms &nbsp;&nbsp;&nbsp;&nbsp; {atime}
+                        {source_hint}&nbsp;&nbsp;&nbsp;&nbsp; {speed_str}{total_ms}ms &nbsp;&nbsp;&nbsp;&nbsp; {atime}
                         </div>
                     """
                     rendered_html = render_markdown_html(partial_text)
@@ -994,11 +1018,6 @@ def main():
                 except Exception as e:
                     partial_text += f"  \n  \n  `📛出现了错误：{str(e)}`！"
                     atime = f"🕐{datetime.datetime.now().strftime('%H:%M:%S')}"
-                    partial_text += f"""
-                        <div style="text-align:right; font-size:12px; color:#888888 !important;">
-                        {atime}
-                        </div>
-                    """
                     rendered_html = render_markdown_html(partial_text)
                     log(e)
                     print(traceback.format_exc())
@@ -1023,6 +1042,10 @@ def main():
             debug_button = ui.button()
             debug_button.props('icon="developer_mode" round')
             debug_button.on("click", show_hide_debug_panel)
+            debug_button.disable()
+            debug_button.style("""
+                filter: grayscale(1);
+            """)
 
 
 @ui.page("/login")
@@ -1084,8 +1107,8 @@ def login():
 
 # run app
 ui.run(
-    host="0.0.0.0",
-    port=7860,
+    host=settings.host,
+    port=settings.port,
     title="企业知识库",
     language="zh-CN",
     storage_secret=settings.storage_secret,
