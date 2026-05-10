@@ -467,13 +467,12 @@ def main():
             )
             ui.button(icon="logout", on_click=logout).props("flat round")
 
-        initial_container_height = "100%" if chat_history else "60%"
         outer_container = (
             ui.row()
             .classes("w-full no-wrap outer-container")
             .style(
-                f"""
-                height: {initial_container_height};
+                """
+                height: "100%";
                 max-width: 960px;
                 margin: 0 auto;
                 padding: 4px;
