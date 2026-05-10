@@ -372,6 +372,16 @@ class IndexBuilder:
             print(f"== Large nodes split:{split_count}")
         return candidate_nodes
 
+    def relative_to_parent(self, parent_header: str, target_header: str) -> str:
+        if target_header.startswith(parent_header):
+            remain = target_header[len(parent_header) :]
+            if not remain:
+                return ""
+            if not remain.startswith("/"):
+                remain = "/" + remain
+            return remain
+        return target_header
+
     def _merge_small_chunks(
         self,
         candidate_nodes,
@@ -458,7 +468,11 @@ class IndexBuilder:
                 # merged chunk count
                 base_meta["merged_chunks"] = len(merged_nodes)
                 base_meta["merged_headers"] = [
-                    n.metadata.get("header_path") for n in merged_nodes
+                    self.relative_to_parent(
+                        current_parent_header,
+                        n.metadata.get("header_path", ""),
+                    )
+                    for n in merged_nodes
                 ]
 
             temp_node = TextNode(
