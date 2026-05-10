@@ -84,9 +84,7 @@ class RagService:
         is_quoted = detect_quoted_query(question)
         if is_quoted:
             question = sanitize_query(question)
-            logger.log(f"Sanitized question: {question}")
-        else:
-            logger.log(f"Original question: {question}")
+            # logger.log(f"Sanitized question: {question}")
         if not force_rag:
             dict_result = dict_engine.query(question)
             if dict_result:
