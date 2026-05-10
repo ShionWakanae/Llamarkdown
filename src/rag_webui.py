@@ -922,13 +922,14 @@ def main():
                         source_hint = "📖"
 
                     atime = f"🕐{datetime.datetime.now().strftime('%H:%M:%S')}"
-                    partial_text += f"""
+                    footer = f"""
+                        <br>
                         <div style="text-align:right; font-size:12px; color:#888888 !important;">
                         {source_hint}&nbsp;&nbsp;&nbsp;&nbsp; ⚡{timing.get("total_ms", 0)}ms &nbsp;&nbsp;&nbsp;&nbsp; {atime}
                         </div>
                     """
                     rendered_html = render_markdown_html(partial_text)
-                    assistant_message.content = rendered_html
+                    assistant_message.content = rendered_html + footer
                     assistant_message.update()
                     client.run_javascript(f"""
                     if (window.MathJax) {{
