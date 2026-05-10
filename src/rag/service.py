@@ -1,7 +1,78 @@
 import time
-
+import re
 from rag.engine import engine
 from rag.dict import dict_engine
+from utils.logger import logger
+
+QUOTE_PAIRS = [
+    ('"', '"'),
+    ("'", "'"),
+    ("“", "”"),
+    ("‘", "’"),
+    ("`", "`"),
+]
+
+QUOTE_CHARS = [
+    '"',
+    "'",
+    "“",
+    "”",
+    "‘",
+    "’",
+    "`",
+]
+
+
+def detect_quoted_query(query: str) -> bool:
+    """
+    Detect whether the whole query is wrapped by quotes.
+
+    Examples:
+        '"CFU"'      -> True
+        "'MME 定义'" -> True
+        "“HSS”"      -> True
+        "`APN`"      -> True
+
+        'abc"def'    -> False
+        'CFU'        -> False
+    """
+
+    q = query.strip()
+
+    if not q:
+        return False
+
+    for left, right in QUOTE_PAIRS:
+        if q.startswith(left) and q.endswith(right):
+            inner = q[len(left) : -len(right)].strip()
+
+            if inner:
+                return True
+
+    return False
+
+
+def sanitize_query(query: str) -> str:
+    """
+    Remove all quote-like characters from query.
+
+    Examples:
+        '"CFU"'      -> CFU
+        "'CFU"       -> CFU
+        "CFU'"       -> CFU
+        "“CFU”"      -> CFU
+        "`APN`"      -> APN
+    """
+
+    pattern = f"[{re.escape(''.join(QUOTE_CHARS))}]"
+
+    cleaned = re.sub(
+        pattern,
+        "",
+        query,
+    )
+
+    return cleaned.strip()
 
 
 class RagService:
@@ -10,6 +81,12 @@ class RagService:
 
     def stream_answer(self, question, force_rag=False):
         total_start = time.perf_counter()
+        is_quoted = detect_quoted_query(question)
+        if is_quoted:
+            question = sanitize_query(question)
+            logger.log(f"Sanitized question: {question}")
+        else:
+            logger.log(f"Original question: {question}")
         if not force_rag:
             dict_result = dict_engine.query(question)
             if dict_result:
@@ -48,7 +125,7 @@ class RagService:
 
         query_start = time.perf_counter()
         engine.usage.reset()
-        response = engine.query(question, force_rag)
+        response = engine.query(question, force_rag or is_quoted)
         question_type = response.get(
             "question_type",
             "RAG",

@@ -612,36 +612,42 @@ class RagEngine:
         )
 
     def query(self, question, force_rag):
-        analysis = self.navigator.analyze_query(question, self)
-        question_type = analysis.get(
-            "question_type",
-            "RAG",
-        )
-        # print(question_type)
-        if not force_rag and question_type != "RAG":
-            return {
-                "question_type": question_type,
-                "message": (
-                    "你好，请直接提出需要查询的问题。"
-                    if question_type == "CHAT"
-                    else "你好，请输入明确的问题。"
-                ),
-                "stream": None,
-                "source_nodes": [],
-            }
+        if not force_rag:
+            analysis = self.navigator.analyze_query(question, self)
+            question_type = analysis.get(
+                "question_type",
+                "RAG",
+            )
+            # print(question_type)
+            if not force_rag and question_type != "RAG":
+                return {
+                    "question_type": question_type,
+                    "message": (
+                        "你好，请直接提出需要查询的问题。"
+                        if question_type == "CHAT"
+                        else "你好，请输入明确的问题。"
+                    ),
+                    "stream": None,
+                    "source_nodes": [],
+                }
 
-        retrieval_query = analysis.get(
-            "retrieval_query",
-            question,
-        )
+            retrieval_query = analysis.get(
+                "retrieval_query",
+                question,
+            )
 
-        user_intent = analysis.get("user_intent", "")
-        presentation_intent = analysis.get("presentation_intent", "")
-        if not retrieval_query:
+            user_intent = analysis.get("user_intent", "")
+            presentation_intent = analysis.get("presentation_intent", "")
+            if not retrieval_query:
+                retrieval_query = question
+
+            log(f"[Rewrite] 意图是: {user_intent} ({presentation_intent})")
+            log(f"[Rewrite] 关键词: {retrieval_query}", False)
+
+        else:
             retrieval_query = question
-
-        log(f"[Rewrite] 意图是: {user_intent} ({presentation_intent})")
-        log(f"[Rewrite] 关键词: {retrieval_query}", False)
+            user_intent = "获取信息"
+            presentation_intent = "介绍"
 
         # retrieve
         nodes_retriever = self.retriever.retrieve(retrieval_query)
