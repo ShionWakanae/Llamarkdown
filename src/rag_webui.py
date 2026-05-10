@@ -734,7 +734,7 @@ def main():
                     log(f"Question: {message}", False)
 
                     # messages
-                    qtime = f"\U0001f550{datetime.datetime.now().strftime('%H:%M:%S')}"
+                    qtime = f"🕐{datetime.datetime.now().strftime('%H:%M:%S')}"
                     with chat_scroll:
                         if not from_confirm:
                             # 用户消息：右边
@@ -750,12 +750,12 @@ def main():
                         with ui.column().classes("w-full items-start mt-0 mb-0"):
                             llm_msg = ui.chat_message(
                                 sent=False,
-                                name="\U00002728智能助理",
+                                name="✨智能助理",
                             ).style("max-width: 95%;")
 
                             with llm_msg:
                                 wait_html = markdown.markdown(
-                                    "&nbsp;&nbsp;\U000023f3我正在检索资料库，可能需要时间，请耐心等候……&nbsp;&nbsp;",
+                                    "&nbsp;&nbsp;⏳我正在检索资料库，可能需要时间，请耐心等候……&nbsp;&nbsp;",
                                 )
                                 nonlocal message_id
                                 message_id += 1
@@ -792,6 +792,7 @@ def main():
                     # state
                     partial_text = ""
                     source_nodes = []
+                    event_source = "none"
                     got_answer = False
                     dct_answer = False
                     first_token = False
@@ -847,7 +848,8 @@ def main():
 
                         # status
                         elif event["type"] == "status":
-                            dct_answer = event["source"] == "dict"
+                            event_source = event["source"]
+                            dct_answer = event_source == "dict"
                             got_answer = event["got_answer"]
                             if event.get("need_rag_confirm"):
                                 show_inline_rag_confirm(
@@ -913,11 +915,16 @@ def main():
                         ]
                     )
                     # final update
+                    source_hint = ""
+                    if event_source == "dict":
+                        source_hint = "🔍"
+                    elif event_source == "llm":
+                        source_hint = "📖"
 
                     atime = f"🕐{datetime.datetime.now().strftime('%H:%M:%S')}"
                     partial_text += f"""
                         <div style="text-align:right; font-size:12px; color:#888888 !important;">
-                        ⚡{timing.get("total_ms", 0)}ms &nbsp;&nbsp;&nbsp;&nbsp; {atime}
+                        {source_hint}&nbsp;&nbsp;&nbsp;&nbsp; ⚡{timing.get("total_ms", 0)}ms &nbsp;&nbsp;&nbsp;&nbsp; {atime}
                         </div>
                     """
                     rendered_html = render_markdown_html(partial_text)
