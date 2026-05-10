@@ -365,11 +365,7 @@ class RagEngine:
         for term in terms:
             self.exact_index[term].append(node)
 
-    def extract_matching_sections(
-        self,
-        text: str,
-        terms: list[str],
-    ):
+    def extract_matching_sections(self, text: str, terms: list[str]):
         """
         从 node 中，仅提取命中 term 的 [SECTION] 块
         """
@@ -409,11 +405,7 @@ class RagEngine:
         return "\n\n".join(matched_sections)
 
     def exact_search(
-        self,
-        retrieval_query: str,
-        existing_nodes,
-        max_per_term=10,
-        max_total=30,
+        self, retrieval_query: str, existing_nodes, max_per_term=10, max_total=30
     ):
         """
         精确英文术语召回
@@ -501,6 +493,52 @@ class RagEngine:
 
         return result
 
+    def dynamic_rerank_select(self, nodes, base_k=5, score_threshold=0.85, max_k=15):
+        if not nodes:
+            return []
+
+        selected = nodes[:base_k]
+        top_score = nodes[0].score if nodes else 0
+        for node in nodes[base_k:]:
+            if len(selected) >= max_k:
+                break
+
+            # 与最高分接近的都保留
+            if node.score >= top_score * score_threshold:
+                selected.append(node)
+            else:
+                break
+
+        return selected
+
+    def dedup_nodes(self, nodes, hit_sources):
+        unique = {}
+
+        for node in nodes:
+            meta = node.metadata
+            key = (
+                meta.get("file_path"),
+                meta.get("line_start"),
+                meta.get("line_end"),
+            )
+
+            if key not in unique:
+                node.metadata.setdefault("hit_sources", [])
+                for source in hit_sources:
+                    if source not in node.metadata["hit_sources"]:
+                        node.metadata["hit_sources"].append(source)
+
+                unique[key] = node
+
+            else:
+                existing = unique[key]
+                existing.metadata.setdefault("hit_sources", [])
+                for source in hit_sources:
+                    if source not in existing.metadata["hit_sources"]:
+                        existing.metadata["hit_sources"].append(source)
+
+        return list(unique.values())
+
     def _build_pipeline(self):
         log("[RAG] Loading storage...")
         chroma_client = chromadb.PersistentClient(path="./storage/chroma_db")
@@ -568,24 +606,6 @@ class RagEngine:
             top_n=settings.retrieval_rerank_top_n_max,
         )
 
-    def dynamic_rerank_select(self, nodes, base_k=5, score_threshold=0.85, max_k=15):
-        if not nodes:
-            return []
-
-        selected = nodes[:base_k]
-        top_score = nodes[0].score if nodes else 0
-        for node in nodes[base_k:]:
-            if len(selected) >= max_k:
-                break
-
-            # 与最高分接近的都保留
-            if node.score >= top_score * score_threshold:
-                selected.append(node)
-            else:
-                break
-
-        return selected
-
     def query(self, question, force_rag):
         analysis = self.navigator.analyze_query(question, self)
         question_type = analysis.get(
@@ -621,20 +641,9 @@ class RagEngine:
         # retrieve
         nodes_retriever = self.retriever.retrieve(retrieval_query)
         may_dup_count = len(nodes_retriever)
-        unique_nodes = {}
 
-        for node in nodes_retriever:
-            meta = node.metadata
-            key = (
-                meta.get("file_path"),
-                meta.get("line_start"),
-                meta.get("line_end"),
-            )
-            if key not in unique_nodes:
-                unique_nodes[key] = node
-
-        nodes_retriever = list(unique_nodes.values())
-        log(f"[Retrieve] nodes: {len(nodes_retriever)}/{may_dup_count}")
+        nodes_retriever = self.dedup_nodes(nodes_retriever, ["bm25", "vector"])
+        log(f"[Retrieve] nodes: {may_dup_count} → {len(nodes_retriever)}")
 
         # rerank
         nodes_rerank = self.reranker.postprocess_nodes(
@@ -671,7 +680,6 @@ class RagEngine:
 
             # 找到第一个负分位置
             insert_index = len(nodes_selected)
-
             for i, node in enumerate(nodes_selected):
                 if node.score < 0:
                     insert_index = i
@@ -683,8 +691,9 @@ class RagEngine:
                 + exact_nodes
                 + nodes_selected[insert_index:]
             )
-
-            log(f"[Final] nodes: {len(nodes_selected)}")
+            may_dup_count1 = len(nodes_selected)
+            nodes_selected = self.dedup_nodes(nodes_selected, ["exact"])
+            log(f"[Final] nodes: {may_dup_count1} → {len(nodes_selected)}")
 
         # build context
         context_parts = []
@@ -755,12 +764,7 @@ class RagEngine:
         # 英文约 4 char/token
         return max(1, len(text) // 2)
 
-    def estimate_usage(
-        self,
-        llm,
-        prompt: str,
-        completion: str = "",
-    ):
+    def estimate_usage(self, llm, prompt: str, completion: str = ""):
         system_prompt = getattr(llm, "system_prompt", "") or ""
 
         prompt_text = system_prompt + "\n" + prompt
@@ -769,12 +773,7 @@ class RagEngine:
             "completion_tokens": self._rough_token_count(completion),
         }
 
-    def extract_or_estimate_usage(
-        self,
-        response,
-        llm,
-        prompt,
-    ):
+    def extract_or_estimate_usage(self, response, llm, prompt):
         usage = extract_usage(response)
 
         if usage:
