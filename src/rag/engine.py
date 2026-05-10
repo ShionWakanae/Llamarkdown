@@ -413,14 +413,11 @@ class RagEngine:
         """
 
         terms = self.extract_exact_terms(retrieval_query)
-
         if not terms:
             return []
 
-        log(f"[Exact] terms: {terms}", False)
-
+        # log(f"[Exact] terms: {terms}", False)
         existing_ids = set()
-
         for node in existing_nodes:
             try:
                 existing_ids.add(node.node.node_id)
@@ -428,21 +425,15 @@ class RagEngine:
                 pass
 
         result = []
-
         seen_node_ids = set()
         seen_doc_ids = defaultdict(int)
-
         for term in terms:
             matched_nodes = self.exact_index.get(term, [])
-
             added_this_term = 0
-
             for raw_node in matched_nodes:
                 node_id = raw_node.node_id
-
                 if node_id in existing_ids:
                     continue
-
                 if node_id in seen_node_ids:
                     continue
 
@@ -481,7 +472,6 @@ class RagEngine:
                 )
 
                 added_this_term += 1
-
                 if added_this_term >= max_per_term:
                     break
 
