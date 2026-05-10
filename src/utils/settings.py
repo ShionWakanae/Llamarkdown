@@ -13,6 +13,8 @@ class Settings:
         load_dotenv()
         self.webui_username = os.getenv("WEBUI_USERNAME")
         self.webui_password = os.getenv("WEBUI_PASSWORD")
+        self.host = os.getenv("HOST", "0.0.0.0")
+        self.port = int(os.getenv("PORT", "7860"))
         # LLM
         self.llm_api_base = self._required("LLM_API_BASE")
         self.llm_api_key = self._required("LLM_API_KEY")
