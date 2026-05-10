@@ -595,9 +595,8 @@ def main():
                                 sent=False,
                                 name="🧠历史回复",
                             ).style("max-width: 95%;"):
-                                html = render_markdown_html(item["answer"])
                                 message_id += 1
-                                ui.html(html).props(
+                                ui.html(item["answer"]).props(
                                     f"id=assistant-msg{message_id}"
                                 ).style(
                                     """
@@ -921,10 +920,26 @@ def main():
                         source_hint = "📖"
 
                     atime = f"🕐{datetime.datetime.now().strftime('%H:%M:%S')}"
+                    total_ms = float(timing.get("total_ms", 0))
+                    speed_str = "⚡"
+                    if total_ms < 1000:
+                        speed_str = "⚡"
+                    elif total_ms < 2000:
+                        speed_str = "🚀"
+                    elif total_ms < 5000:
+                        speed_str = "✈️"
+                    elif total_ms < 10000:
+                        speed_str = "🚗"
+                    elif total_ms < 20000:
+                        speed_str = "🏃"
+                    elif total_ms < 30000:
+                        speed_str = "🚶"
+                    else:
+                        speed_str = "🐢"
                     footer = f"""
                         <br>
                         <div style="text-align:right; font-size:12px; color:#888888 !important;">
-                        {source_hint}&nbsp;&nbsp;&nbsp;&nbsp; ⚡{timing.get("total_ms", 0)}ms &nbsp;&nbsp;&nbsp;&nbsp; {atime}
+                        {source_hint}&nbsp;&nbsp;&nbsp;&nbsp; {speed_str}{timing.get("total_ms", 0)}ms &nbsp;&nbsp;&nbsp;&nbsp; {atime}
                         </div>
                     """
                     rendered_html = render_markdown_html(partial_text)
@@ -941,7 +956,7 @@ def main():
                     history_item = {
                         "question": message,
                         "qtime": qtime,
-                        "answer": partial_text,
+                        "answer": rendered_html + footer,
                         "atime": atime,
                         "confirm": from_confirm,
                         "sources": [],
