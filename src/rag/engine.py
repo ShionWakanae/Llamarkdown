@@ -529,6 +529,21 @@ class RagEngine:
 
         return list(unique.values())
 
+    def normalize_nodes_metadata(self, nodes):
+        remove_keys = {
+            "_node_content",
+            "_node_type",
+            "doc_id",
+            "document_id",
+            "ref_doc_id",
+        }
+        for node in nodes:
+            metadata = node.metadata
+            for key in remove_keys:
+                metadata.pop(key, None)
+
+        return nodes
+
     def _build_pipeline(self):
         log("[RAG] Loading storage...")
         chroma_client = chromadb.PersistentClient(path="./storage/chroma_db")
@@ -684,6 +699,9 @@ class RagEngine:
             may_dup_count1 = len(nodes_selected)
             nodes_selected = self.dedup_nodes(nodes_selected, ["exact"])
             log(f"[Final] nodes: {may_dup_count1} → {len(nodes_selected)}")
+
+        # normalize nodes metadata
+        nodes_selected = self.normalize_nodes_metadata(nodes_selected)
 
         # build context
         context_parts = []

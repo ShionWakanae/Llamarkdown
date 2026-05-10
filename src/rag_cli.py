@@ -135,18 +135,53 @@ if debug_data:
             False,
         )
 
-        retrieval = debug_data.get(
-            "retrieval",
-            [],
-        )
+        # retrieval = debug_data.get(
+        #     "retrieval",
+        #     [],
+        # )
         # print(JSON(json.dumps(retrieval, ensure_ascii=False, indent=2)))
+        preferred_order = [
+            "file_path",
+            "file_size",
+            "file_name",
+            "header_path",
+            "line_start",
+            "line_end",
+            "block_type",
+            "text_length",
+            "table_row_start",
+            "table_row_end",
+            "merged_chunks",
+            "merged_headers",
+            "hit_sources",
+        ]
+
+        def ordered_metadata(meta):
+            ordered = {}
+
+            # 先放重点字段
+            for key in preferred_order:
+                if key in meta:
+                    ordered[key] = meta[key]
+
+            # 剩余字段按字母排序
+            for key in sorted(meta.keys()):
+                if key not in ordered:
+                    ordered[key] = meta[key]
+
+            return ordered
 
         for node in source_nodes:
             print(
                 ">>>-------------------------------------------------------------------------------<<<"
             )
-            print(">>> score:(", node.score, ") metadata：", node.metadata)
-            builtins.print(node.text)
+            print(
+                ">>> score:(",
+                node.score,
+                ") metadata：",
+                ordered_metadata(node.metadata),
+            )
+            builtins.print(node.text.replace("\n\n", "\n"))
             print()
 
 log(
