@@ -453,9 +453,6 @@ def main():
         if debug_panel_shown:
             right_column.style(
                 """
-                width: 24%;
-                height: 100%;
-                overflow: hidden;
                 display: block;
                 """
             )
@@ -466,9 +463,6 @@ def main():
             outer_container.style("max-width: 960px;")
             right_column.style(
                 """
-                width: 24%;
-                height: 100%;
-                overflow: hidden;
                 display: none;
                 """
             )
@@ -502,7 +496,7 @@ def main():
             .classes("w-full no-wrap outer-container")
             .style(
                 """
-                height: 100%;
+                height: calc(100vh - 70px);
                 max-width: 960px;
                 margin: 0 auto;
                 padding: 4px;
@@ -1084,25 +1078,30 @@ def login():
             font-weight:700;
         """)
 
-        username = ui.input("用户名").props("outlined").classes("w-full")
+        username = (
+            ui.input(placeholder="请输入用户名")
+            .classes("chat-input w-full")
+            .props("clearable")
+        )
         password = (
             ui.input(
-                "密码",
+                placeholder="请输入密码",
                 password=True,
                 password_toggle_button=True,
             )
-            .props("outlined")
-            .classes("w-full")
+            .classes("chat-input w-full")
+            .props("clearable")
         )
         password.on(
             "keydown.enter",
             lambda e: try_login(),
         )
 
-        ui.button(
-            "登录",
-            on_click=try_login,
-        ).classes("w-full")
+        with password.add_slot("append"):
+            ui.button(
+                icon="login",
+                on_click=try_login,
+            ).props("flat round dense")
 
 
 # run app
