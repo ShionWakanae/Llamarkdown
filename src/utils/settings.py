@@ -26,6 +26,7 @@ class Settings:
         # Embedding / Reranker
         self.embedding_model = self._required("EMBEDDING_MODEL")
         self.reranker_model = self._required("RERANKER_MODEL")
+        self.embedding_device = os.getenv("EMBEDDING_DEVICE", "cuda")
 
         # Chunk
         self.chunk_size = int(os.getenv("CHUNK_SIZE", "1000"))
@@ -94,7 +95,7 @@ class Settings:
 
         self.embed_model = HuggingFaceEmbedding(
             model_name=self.embedding_model,
-            device="cuda",
+            device=self.embedding_device,
             embed_batch_size=8,
         )
 

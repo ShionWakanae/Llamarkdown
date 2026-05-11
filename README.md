@@ -10,17 +10,12 @@
 
 ## 关于llamaIndex
 > [!Note]
-> 面向大语言模型（LLM）的数据接入与检索增强（RAG）框架，用于将本地文档、数据库、API、知识库等外部数据连接到大模型，实现基于私有数据的问答能力。
->
->它最初定位为“LLM 与外部数据之间的桥梁”，后来发展为完整的 RAG 开发框架。开发者可以使用 LlamaIndex 完成文档读取、切分（chunking）、向量化（embedding）、索引构建、检索（retrieval）和重排序（rerank）等流程，并将结果交给大语言模型生成答案。
->
->LlamaIndex 支持多种数据源、向量数据库和模型服务，例如 PDF、Markdown、FAISS、Chroma、Qdrant、OpenAI 以及本地 llama.cpp 模型，同时提供混合检索、查询路由、多索引组合等高级 RAG 能力。
->
->相比手工拼接 embedding、向量库和 prompt 的传统方案，LlamaIndex 更强调模块化与可组合性，适用于知识库问答、文档搜索、代码检索和本地离线 RAG 等场景。
+> 面向大语言模型（LLM）的数据接入与检索增强（RAG）框架，用于将本地文档、数据库、API、知识库等外部数据连接到大模型，实现基于私有数据的问答能力。它支持多种数据源、向量数据库和模型服务，例如 PDF、Markdown、FAISS、Chroma、Qdrant、OpenAI 以及本地 llama.cpp 模型，同时提供混合检索、查询路由、多索引组合等高级 RAG 能力。它更强调模块化与可组合性，适用于知识库问答、文档搜索、代码检索和本地离线 RAG 等场景。
 
 
 ## 项目功能
 ### （1）建立知识库
+
 1. 建立RAG所需的向量数据库，数据保存在 `项目/storage/chroma_db`（改用内嵌的chroma db）。
    * 支持章节结构正确的Markdown文件。
    * 自定义的标题结构解析器对Markdown文件进行基于标题结构的分块（chunking）
@@ -40,6 +35,7 @@
    * 这部分是考虑到行业特点加进去的。专业术语、字段结构……只要是关键词释义，都可快速检索。
    
 ### （2）查询检索
+
 1. 字典快速查询检索
    * 对于单个词语（单词）先进行毫秒级别的字典检索。
    * 可用简单的语句同时检索多个关键字（比如：`CW和hold是什么？`,`IMPI IMPU IMSI MSISDN`）
@@ -64,11 +60,13 @@
 
 
 ## 安装
+💡我自己用的环境是`python 3.10`，没测试过新的python版本。
+
 1. 将仓库代码克隆到一个本地目录： 
 `git clone https://github.com/ShionWakanae/llamaIndexSample.git`
-2. 进入这个目录建立虚拟环境：`python -m venv venv`
-3. 激活虚拟环境：`.\venv\scripts\activate`
-4. 安装依赖：`pip install -r requirements.txt`
+1. 进入这个目录建立虚拟环境：`python -m venv venv`
+2. 激活虚拟环境：`.\venv\scripts\activate`
+3. 安装依赖：`pip install -r requirements.txt`
 
 ## 使用
 ### （0）文档转换为MD格式
@@ -101,6 +99,7 @@ LLM_MODEL=gpt-4.1-mini                      #模型名称
 LLM_MODEL_SMALL=                            #小模型名称，留空代表不另外设置（用于查询重写和用户意图）
 
 EMBEDDING_MODEL=BAAI/bge-m3                 #可以不修改，自动从hf上下载。
+EMBEDDING_DEVICE=cuda                       #默认设备为cuda，也可以设置为cpu
 RERANKER_MODEL=BAAI/bge-reranker-v2-m3      #可以不修改，自动从hf上下载。
 
 CHUNK_SIZE=1024                             #分块大小。

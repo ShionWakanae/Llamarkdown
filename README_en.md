@@ -73,6 +73,7 @@ I am experimenting with building applications based on LlamaIndex. Like this lit
 ---
 
 ## Installation
+💡 I am using Python 3.10 for this project. I have not tested it with more versions.
 
 1. Clone the repository:
    `git clone https://github.com/ShionWakanae/llamaIndexSample.git`
@@ -127,6 +128,7 @@ LLM_MODEL=gpt-4.1-mini                      # Model name
 LLM_MODEL_SMALL=                            # Small model for query rewrite
 
 EMBEDDING_MODEL=BAAI/bge-m3                 # Automatically downloaded from Hugging Face if needed.
+EMBEDDING_DEVICE=cuda                       # Default device is cuda, can be set to cpu
 RERANKER_MODEL=BAAI/bge-reranker-v2-m3      # Automatically downloaded from Hugging Face if needed.
 
 CHUNK_SIZE=1024                             # Text chunk size
