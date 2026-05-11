@@ -121,7 +121,8 @@ PORT=7860                                   #WebUI端口
 ```
 
 💡关于显卡加速：
-没有N卡，请修改`EMBEDDING_DEVICE=cuda,`，改为`cpu`。
+
+没有N卡请修改`EMBEDDING_DEVICE=cuda`，改为`cpu`。  
 有Nvidia显卡，请安装CUDA版本的Pytorch：
 ``` shell
 pip uninstall torch torchvision torchaudio
