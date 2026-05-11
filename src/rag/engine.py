@@ -628,13 +628,16 @@ class RagEngine:
             )
             # print(question_type)
             if not force_rag and question_type != "RAG":
+                if question_type == "CHAT":
+                    ret = "您好，我是专职的企业知识库的智能助理，您可以直接提出问题。"
+                elif question_type == "INVALID":
+                    ret = f'非常抱歉，我无法理解您说的 {question} 具体是什么意思……\n请检查拼写，或给正确的关键词加上引号，输入 "{question}" 这样带引号的方式强制查询。'
+                else:
+                    ret = "您好，请直接输入明确的需要查询的问题或关键词。"
+
                 return {
                     "question_type": question_type,
-                    "message": (
-                        "你好，请直接提出需要查询的问题。"
-                        if question_type == "CHAT"
-                        else "你好，请输入明确的问题。"
-                    ),
+                    "message": (ret),
                     "stream": None,
                     "source_nodes": [],
                 }

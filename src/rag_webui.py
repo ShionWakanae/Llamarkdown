@@ -16,6 +16,8 @@ from rag.formatter import build_debug_html
 from utils.logger import logger
 from utils.settings import settings
 
+version_num = "0.1.2"
+
 
 class FilteredStderr:
     def __init__(self, original):
@@ -476,7 +478,7 @@ def main():
                     ui.icon("database").props("size=medium")
                     ui.label("企业知识库").style("font-size: 16px; font-weight: 600;")
                 quick_questions = [
-                    "什么是数据质量保障?",
+                    "请介绍数据质量保障平台",
                     "IMSI和MSISDN和IMPI和IMPU的关系?",
                     "华为HSS数据有哪些类型和格式?",
                     "STNSR",
@@ -486,7 +488,7 @@ def main():
                     ui.button(q, on_click=lambda msg=q: send_message(msg)).props(
                         "flat dense size=sm"
                     )
-            ui.label("ver 0.1.1").style(
+            ui.label(f"ver {version_num}").style(
                 "font-size: 12px; color: #888; margin-right: 12px;"
             )
             ui.button(icon="logout", on_click=logout).props("flat round")

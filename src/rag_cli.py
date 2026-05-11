@@ -128,7 +128,7 @@ if not dct_answer:
 print()
 
 if debug_data:
-    show_details = input("你要查看具体的命中信息吗？[y/N]: ").strip().lower()
+    show_details = input("您要查看具体的命中信息吗？[y/N]: ").strip().lower()
     if show_details.lower() in ("y", "yes"):
         log(
             "命中的内容:",

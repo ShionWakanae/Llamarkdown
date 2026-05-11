@@ -137,6 +137,21 @@ class RagService:
                     "无法处理该问题。",
                 ),
             }
+            total_ms = round(
+                (time.perf_counter() - total_start) * 1000,
+                2,
+            )
+            yield {
+                "type": "debug",
+                "content": {
+                    "timing": {
+                        "query_ms": 0,
+                        "llm_ms": 0,
+                        "total_ms": total_ms,
+                    },
+                    "retrieval": [],
+                },
+            }
             return
 
         query_ms = round(

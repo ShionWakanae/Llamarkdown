@@ -207,11 +207,7 @@ class DictEngine:
         # ■ 转换为换行 + 列表
         # 避免第一行前面多一个空行
         text = text.replace("■", "\n- ")
-
-        # <br> → 换行（你之前已经有）
         text = text.replace("<br>", "\n")
-
-        # 清理多余空白
         text = re.sub(r"\n+", "\n", text).strip()
 
         return text
