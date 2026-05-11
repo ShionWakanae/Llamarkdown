@@ -455,11 +455,11 @@ def main():
             right_column.style("display: none;")
 
     with ui.column().classes(
-        "w-full h-screen max-w-7xl mx-auto px-2 py-1 gap-0 overflow-hidden"
+        "w-full h-screen max-w-7xl mx-auto px-0 sm:px-2 py-1 gap-0 overflow-hidden"
     ):
         with ui.row().classes("w-full items-center justify-between mt-0 mb-0"):
             # =========================
-            # 左侧整体区域
+            # 左侧整体区域，logo，标题，快捷提问
             # =========================
             with ui.row().classes("""
                 items-center
@@ -516,7 +516,7 @@ def main():
                     switch_debug.set_enabled(False)
 
             # =========================
-            # 右侧固定区域
+            # 右侧固定区域，版本号，菜单。
             # =========================
             with ui.row().classes("""
                 items-center
@@ -552,9 +552,10 @@ def main():
                 max-width: 960px;
                 margin: 0 auto;
                 padding: 0px;
-                gap: 4px;
+                gap: 0px;
                 overflow: hidden;
                 transition: height 0.3s ease;
+                background: #313131;
                 """
             )
         )
@@ -633,7 +634,7 @@ def main():
                         """
                         flex: 1;
                         overflow-y: auto;
-                        background: #313131;
+                        background: #303030;
                         border: none;
                         border-radius: 8px;
                         padding: 12px;
@@ -671,22 +672,23 @@ def main():
                             if item["sources"]:
                                 with (
                                     ui.row()
-                                    .classes("gap-0 mt-0 mb-0")
+                                    .classes("gap-2 mt-0 mb-0")
                                     .style("max-width: 95%;")
                                 ):
                                     for source in item["sources"]:
-                                        ui.button(
-                                            Path(source["file_name"]).stem,
-                                            icon="description",
-                                            on_click=lambda n=Path(source["file_name"]).stem, p=source["path"], h=source["hits"]: (
-                                                show_file_preview(n, p, h)
-                                            ),
-                                        ).props("flat dense").style("""
-                                            white-space: normal;
-                                            word-break: break-all;
-                                            flex-shrink: 0;
-                                            min-width: 140px;
-                                        """).classes("break-btn")
+                                        with ui.row().classes("items-start gap-0"):
+                                            ui.link(
+                                                f"""
+                                                📄{Path(source["file_name"]).stem}
+                                                """,
+                                                target=None,
+                                            ).style("cursor: pointer;").on(
+                                                "click",
+                                                lambda n=Path(source["file_name"]).stem, p=source["path"], h=source["hits"]: (
+                                                    show_file_preview(n, p, h)
+                                                ),
+                                            )
+
                 alen = len(chat_scroll.default_slot.children)
                 clear_badge.set_text(f"{alen}")
                 if alen == 0:
@@ -734,7 +736,7 @@ def main():
         # input row
         with (
             ui.row()
-            .classes("w-full items-center justify-center no-wrap")
+            .classes("w-full justify-center no-wrap")
             .style("padding-top: 4px; padding-bottom: 28px;")
         ):
             with (
@@ -744,10 +746,11 @@ def main():
                 .classes("chat-input")
                 .props("clearable")
                 .style("""
-                flex: 1;
-                min-width: 0;
-                max-width: 900px;
-            """) as input_box
+                    width: 100%;
+                    max-width: 860px;
+                    margin-left: 20px;
+                    margin-right: 20px;
+                """) as input_box
             ):
                 with input_box.add_slot("append"):
                     send_button = ui.button(
@@ -1006,13 +1009,18 @@ def main():
                                         continue
 
                                     shown_files.add(file_name)
-                                    ui.button(
-                                        Path(file_name).stem,
-                                        icon="description",
-                                        on_click=lambda n=Path(file_name).stem, p=file_path, h=hits: (
-                                            show_file_preview(n, p, h)
-                                        ),
-                                    ).props("flat dense")
+                                    with ui.row().classes("items-start gap-0"):
+                                        ui.link(
+                                            f"""
+                                            📄{Path(file_name).stem}
+                                            """,
+                                            target=None,
+                                        ).style("cursor: pointer;").on(
+                                            "click",
+                                            lambda n=Path(file_name).stem, p=file_path, h=hits: (
+                                                show_file_preview(n, p, h)
+                                            ),
+                                        )
                                     history_item["sources"].append(
                                         {
                                             "file_name": file_name,

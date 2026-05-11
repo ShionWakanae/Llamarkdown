@@ -78,7 +78,7 @@ body {
     color: #eaeaea !important;
     background: #1f553f !important;
     font-weight: 600;
-    padding: 8px 32px 8px 32px !important;
+    padding: 8px 16px 8px 16px !important;
 }
 
 .q-message-sent .q-message-text::before {
@@ -301,18 +301,6 @@ mark {
     border-radius: 2px;
 }
 
-.break-btn .q-btn__content {
-    white-space: normal !important;
-    word-break: break-all !important;
-    text-align: left;
-    line-height: 1.3;
-}
-
-.break-btn {
-    max-width: 95%;
-    flex-shrink: 0;
-}
-
 @media (max-width: 640px) {
 
     .chat-area {
@@ -320,11 +308,22 @@ mark {
         /* Firefox */
         -ms-overflow-style: none;
         /* IE/Edge */
-        padding: 0 !important;
+        /* padding: 12px !important; */
     }
 
     .chat-area::-webkit-scrollbar {
         display: none;
         /* Chrome/Safari */
+    }
+
+    .q-page {
+        padding: 0px !important;
+    }
+    .q-page-container {
+        padding: 0px !important;
+    }
+    .nicegui-content {
+        padding: 0 !important;
+        gap: 0 !important;
     }
 }
