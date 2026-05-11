@@ -33,15 +33,15 @@ Mon May 11 13:31:35 2026
 +-----------------------------------------+------------------------+----------------------+
 ```
 
-## （二）显卡支持的最低CUDA版本
+## （二）显卡支持的推荐最低CUDA版本
 
-检查自己的显卡，如果你的CUDA工具包低于下表的最低所需版本，你需要升级CUDA工具包。
+检查自己的显卡，如果你的CUDA工具包低于下表的推荐最低版本，你需要升级CUDA工具包。
 太老的显卡会存在支持的上限，但主流显卡只有下限没有上限。
 
 对于专业显卡，你都买专业卡了不可能不懂这些……
-消费级显卡和对应的最低所需CUDA版本如下：
+消费级显卡和对应的推荐最低CUDA版本如下：
 
-| 显卡系列 | 代表型号 | 显卡架构 (NVIDIA Architecture) | 计算能力 (CUDA Capability) | 最低所需 CUDA 版本 |
+| 显卡系列 | 代表型号 | 显卡架构 (NVIDIA Architecture) | 计算能力 (CUDA Capability) | 推荐最低 CUDA 版本 |
 | :--- | :--- | :--- | :--- | :--- |
 | **GeForce RTX 50 Series** | RTX 5090, 5080, 5070 Ti, 5070, 5060 Ti, 5060 | Blackwell | 12.0 | CUDA 12.0 或更高版本 (建议 12.8+) |
 | **GeForce RTX 40 Series** | RTX 4090, 4080, 4070 Ti, 4070, 4060 Ti, 4060 | Ada Lovelace | 8.9 | CUDA 11.8 或更高版本 |
@@ -51,7 +51,20 @@ Mon May 11 13:31:35 2026
 例如我的显卡CUDA支持最低是`11.8`版本，记住这个数字（最低）:
 
 ## （三）安装CUDA工具包
-如果还没有工具包，请从[官方网站下载](https://developer.nvidia.com/cuda-toolkit-archive)。
+
+> 注意：PyTorch 安装的 cu128/cu129，本身已经内置 CUDA Runtime。
+> 因此即使系统没有安装 CUDA Toolkit，大部分 AI 推理仍然可以运行。
+
+CUDA Toolkit 更多用于：
+- 编译 CUDA 扩展
+- flash-attn
+- 自定义 CUDA Kernel
+- Triton 开发
+- CUDA C/C++ 开发
+
+---
+
+如果确实需要安装CUDA工具包，请从[官方网站下载](https://developer.nvidia.com/cuda-toolkit-archive)。
 
 安装好CUDA工具包后，请运行命令 `nvcc --version` 确认版本。
 例如我的CUDA工具包版本是`12.8`版本，记住这个数字（最后一个数字）:
@@ -86,11 +99,12 @@ flowchart TD
     I --> J;
 ```
 
-需要保证：`驱动支持CUDA版本` >= `CUDA工具包版本` >= `显卡最低支持版本`
+需要保证：`驱动支持CUDA版本` >= `CUDA工具包版本` >= `显卡推荐最低CUDA版本`
 
 以自己为例：`13.2` >= `12.8` >= `11.8`
 
-用中间的版本数字，去安装Pytorch的CUDA版本，比如我自己：
+用中间的版本数字，去安装Pytorch的CUDA版本，
+对于CUDA12，版本12.8比较稳定，所以我自己：
 ``` shell
 (venv)...> pip uninstall torch torchvision torchaudio
 (venv)...> pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128

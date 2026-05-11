@@ -115,7 +115,19 @@ RETRIEVAL_RERANK_TOP_N_MAX = 10             #最大扩展召回数量。
 REF_FILE_PATH = "你的MD文件目录"              #参考文档路径（用于图像显示和定位源文件）。
 WEBUI_USERNAME=janedoe                      #WebUI用户名
 WEBUI_PASSWORD=123456                       #WebUI密码
+
+HOST=127.0.0.1                              #WebUI主机地址
+PORT=7860                                   #WebUI端口
 ```
+
+💡关于显卡加速：
+没有N卡，请修改`EMBEDDING_DEVICE=cuda,`，改为`cpu`。
+有Nvidia显卡，请安装CUDA版本的Pytorch：
+``` shell
+pip uninstall torch torchvision torchaudio
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+```
+如果对CUDA版本有疑问，请参考:[关于CUDA版本的说明](./doc/cuda.md)。
 
 ### （2）建立知识库
 索引`.md`类型的文件：
@@ -127,14 +139,7 @@ python .\src\index_cli.py '你的MD文件目录'
 python .\src\index_cli.py '你的MD文件目录' --debug    #只会打印日志
 ```
 
-如果是N卡建议使用CUDA，否则请注释掉`device="cuda",`语句。  
-使用CUDA的方式（注意自己的显卡，和对应安装CUDA的版本）：
-``` shell
-pip uninstall torch torchvision torchaudio
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
-```
-
-速度对比：
+CPU和CUDA速度对比：
 ```yml
 i9-12900F * Generating embeddings: 100%|█████████████████████| 582/582 [06:45<00:00, 1.43it/s] 
 4060TI16G * Generating embeddings: 100%|█████████████████████| 582/582 [00:30<00:00, 19.26it/s]

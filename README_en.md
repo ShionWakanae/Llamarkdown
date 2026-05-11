@@ -144,23 +144,48 @@ RETRIEVAL_RERANK_TOP_N_MAX = 10             # Max number of results after dynami
 REF_FILE_PATH="Path_To"                     # Path to reference documents (used for image rendering and locate source file)
 WEBUI_USERNAME=janedoe                      #WebUI username
 WEBUI_PASSWORD=123456                       #WebUI password
+
+HOST=127.0.0.1                              #WebUI host address
+PORT=7860                                   #WebUI port
 ```
 
-### (2) Build the Knowledge Base
-Index `.md` files:
-``` shell
-python .\src\index_cli.py 'Your Markdown directory'
-```
-ℹ️ It is recommended to first use the debug parameter to inspect how the documents are chunked, and proceed with formal indexing only after confirming there are no issues.
-``` shell
-python .\src\index_cli.py '你的MD文件目录' --debug    #print log only
+💡 About GPU Acceleration:  
+If you do not have an NVIDIA GPU, please change:
+
+```env
+EMBEDDING_DEVICE=cuda
 ```
 
-If you are using an NVIDIA GPU, CUDA is recommended. Otherwise, comment out the `device="cuda",` line.  
-To install CUDA-enabled PyTorch (make sure to choose the correct CUDA version for your GPU):
-``` shell
+to:
+
+```env
+EMBEDDING_DEVICE=cpu
+```
+
+If you have an NVIDIA GPU, please install the CUDA version of PyTorch:
+
+```shell
 pip uninstall torch torchvision torchaudio
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+```
+
+If you are unsure about CUDA versions, please refer to:  
+[CUDA Version Notes](./doc/cuda.md)
+
+### (2) Build the Knowledge Base
+
+Index `.md` files:
+
+```shell
+python .\src\index_cli.py 'your_markdown_directory'
+```
+
+ℹ️ It is recommended to first use the `--debug` option to inspect how the documents are chunked before performing the actual indexing:
+
+```shell
+python .\src\index_cli.py 'your_markdown_directory' --debug
+# Only prints debug logs
+```org/whl/cu128
 ```
 
 Performance comparison:
