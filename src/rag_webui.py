@@ -473,25 +473,87 @@ def main():
         "w-full h-screen max-w-7xl mx-auto px-2 py-1 gap-0 overflow-hidden"
     ):
         with ui.row().classes("w-full items-center justify-between mt-0 mb-0"):
-            with ui.row().classes("items-center gap-4 mt-0 mb-0"):
-                with ui.row().classes("items-center gap-0 mt-0 mb-0 ml-4"):
+            # =========================
+            # 左侧整体区域
+            # =========================
+            with ui.row().classes("""
+                items-center
+                flex-1
+                min-w-0
+                no-wrap
+                overflow-hidden
+            """):
+                # logo区域（固定宽度）
+                with (
+                    ui.row()
+                    .classes("""
+                        items-center
+                        gap-0
+                        mt-0
+                        mb-0
+                        ml-4
+
+                        flex-shrink-0
+                    """)
+                    .style("""
+                        width: 100px;
+                    """)
+                ):
                     ui.icon("database").props("size=medium")
-                    ui.label("企业知识库").style("font-size: 16px; font-weight: 600;")
-                quick_questions = [
-                    "请介绍数据质量保障平台",
-                    "IMSI和MSISDN和IMPI和IMPU的关系?",
-                    "华为HSS数据有哪些类型和格式?",
-                    "STNSR",
-                    "SRVCC",
-                ]
-                for q in quick_questions:
-                    ui.button(q, on_click=lambda msg=q: send_message(msg)).props(
-                        "flat dense size=sm"
-                    )
-            ui.label(f"ver {version_num}").style(
-                "font-size: 12px; color: #888; margin-right: 12px;"
-            )
-            ui.button(icon="logout", on_click=logout).props("flat round")
+
+                    ui.label("企业知识库").style("""
+                        font-size: 16px;
+                        font-weight: 600;
+                    """)
+
+                # 快捷问题区域（桌面显示）
+                with ui.row().classes("""
+                    gt-sm
+
+                    items-center
+                    gap-4
+
+                    ml-4
+                    mr-4
+
+                    no-wrap
+                    overflow-x-auto
+
+                    flex-1
+                    min-w-0
+                """):
+                    quick_questions = [
+                        "请介绍数据质量保障平台",
+                        "IMSI和MSISDN和IMPI和IMPU的关系?",
+                        "华为HSS数据有哪些类型和格式?",
+                        "中兴HSS数据有哪些类型和格式?",
+                        "SRVCC",
+                        "STNSR",
+                        "EPSSER",
+                    ]
+
+                    for q in quick_questions:
+                        ui.button(q, on_click=lambda msg=q: send_message(msg)).props(
+                            "flat dense size=sm"
+                        )
+
+            # =========================
+            # 右侧固定区域
+            # =========================
+            with ui.row().classes("""
+                items-center
+                gap-2
+
+                flex-shrink-0
+
+                mr-2
+            """):
+                ui.label(f"ver {version_num}").style("""
+                    font-size: 12px;
+                    color: #888;
+                """)
+
+                ui.button(icon="logout", on_click=logout).props("flat round")
 
         outer_container = (
             ui.row()
@@ -501,7 +563,7 @@ def main():
                 height: calc(100vh - 70px);
                 max-width: 960px;
                 margin: 0 auto;
-                padding: 4px;
+                padding: 0px;
                 gap: 4px;
                 overflow: hidden;
                 transition: height 0.3s ease;
@@ -650,10 +712,11 @@ def main():
                                                 show_file_preview(n, p, h)
                                             ),
                                         ).props("flat dense").style("""
-                                            white-space: nowrap;
+                                            white-space: normal;
+                                            word-break: break-all;
                                             flex-shrink: 0;
                                             min-width: 140px;
-                                        """)
+                                        """).classes("break-btn")
 
             # right
             right_column = ui.column().style(
@@ -680,7 +743,7 @@ def main():
                     width: 100%;
                     border: 1px solid #3a3a3a;
                     border-radius: 8px;
-                    padding: 12px;
+                    padding: 8px;
                     height: 100%;
                     overflow-y: auto;
                     font-size: 12px;
