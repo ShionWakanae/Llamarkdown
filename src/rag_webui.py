@@ -75,6 +75,7 @@ def logout():
 
 app.add_static_files("/static/js", "./src/ui/js")
 app.add_static_files("/static/css", "./src/ui/css")
+app.add_static_files("/static/images", "./images")
 ref_path = settings.ref_file_path
 if ref_path:
     app.add_static_files("/static/ref_md", f"{ref_path}")
@@ -241,22 +242,16 @@ def auto_scroll_chat(client):
 def main():
     auth_guard()
     chat_history = app.storage.user.setdefault("chat_history", [])
-    debug_panel_shown = False
 
     def clear_chat():
         chat_history.clear()
         chat_scroll.clear()
-        clear_button.disable()
-        clear_button.style("""
-            filter: grayscale(1);
-        """)
-        nonlocal debug_panel_shown
-        debug_panel_shown = True
-        show_hide_debug_panel()
-        debug_button.disable()
-        debug_button.style("""
-            filter: grayscale(1);
-        """)
+        clear_menu_item.disable()
+        clear_menu_item.style("filter: grayscale(1);")
+        clear_badge.set_text("0")
+        clear_badge.set_background_color("gray")
+        switch_debug.set_value(False)
+        switch_debug.set_enabled(False)
         debug_panel.content = """
         <div class="debug-panel">
             waiting for data...
@@ -449,25 +444,15 @@ def main():
         dark="#111111",
     )
 
-    def show_hide_debug_panel():
-        nonlocal debug_panel_shown
-        debug_panel_shown = not debug_panel_shown
-        if debug_panel_shown:
-            right_column.style(
-                """
-                display: block;
-                """
-            )
+    def show_hide_debug_panel(show: bool):
+        if show:
+            right_column.style("display: block;")
             outer_container.style(remove="max-width: 960px;")
             outer_container.style("max-width: 1280px;")
         else:
             outer_container.style(remove="max-width: 1280px;")
             outer_container.style("max-width: 960px;")
-            right_column.style(
-                """
-                display: none;
-                """
-            )
+            right_column.style("display: none;")
 
     with ui.column().classes(
         "w-full h-screen max-w-7xl mx-auto px-2 py-1 gap-0 overflow-hidden"
@@ -492,33 +477,22 @@ def main():
                         mt-0
                         mb-0
                         ml-4
-
                         flex-shrink-0
                     """)
-                    .style("""
-                        width: 100px;
-                    """)
+                    .style("width: 100px;")
                 ):
                     ui.icon("database").props("size=medium")
-
-                    ui.label("企业知识库").style("""
-                        font-size: 16px;
-                        font-weight: 600;
-                    """)
+                    ui.label("企业知识库").style("font-size: 16px; font-weight: 600;")
 
                 # 快捷问题区域（桌面显示）
                 with ui.row().classes("""
                     gt-sm
-
                     items-center
                     gap-4
-
                     ml-4
                     mr-4
-
                     no-wrap
                     overflow-x-auto
-
                     flex-1
                     min-w-0
                 """):
@@ -536,6 +510,10 @@ def main():
                         ui.button(q, on_click=lambda msg=q: send_message(msg)).props(
                             "flat dense size=sm"
                         )
+                    switch_debug = ui.switch(
+                        "debug", on_change=lambda e: show_hide_debug_panel(e.value)
+                    )
+                    switch_debug.set_enabled(False)
 
             # =========================
             # 右侧固定区域
@@ -543,7 +521,6 @@ def main():
             with ui.row().classes("""
                 items-center
                 gap-2
-
                 flex-shrink-0
 
                 mr-2
@@ -553,7 +530,18 @@ def main():
                     color: #888;
                 """)
 
-                ui.button(icon="logout", on_click=logout).props("flat round")
+                with ui.button(icon="more_vert").props("flat round"):
+                    clear_badge = ui.badge("0", color="gray").props("floating")
+                    with ui.menu():
+                        clear_menu_item = ui.menu_item(
+                            "🧹 清空会话",
+                            on_click=confirm_clear,
+                        )
+                        ui.separator()
+                        ui.menu_item(
+                            "🚪 退出登录",
+                            on_click=logout,
+                        )
 
         outer_container = (
             ui.row()
@@ -608,12 +596,9 @@ def main():
                     .style("""
                         position: absolute;
                         inset: 0;
-
                         z-index: 5;
                         pointer-events: none;
-
                         gap: 10px;
-
                         opacity: 1;
                         transition: opacity 0.25s ease;
                         transform: translateY(80px);
@@ -621,31 +606,22 @@ def main():
                 )
 
                 with empty_state:
-                    ui.image("images/logo.png").style("""
-                        width: 128px;
-                        height: 128px;
-                        opacity: 0.9;
-                    """)
+                    ui.image("/static/images/logo.png").style(
+                        "width: 128px; height: 128px; opacity: 0.9;"
+                    )
 
-                    ui.label("企业知识库").style("""
-                        font-size: 28px;
-                        font-weight: 700;
-                        color: #f0f0f0;
-                        letter-spacing: 1px;
-                        margin-top: 4px;
-                    """)
+                    ui.label("企业知识库").style(
+                        "font-size: 28px; font-weight: 700; color: #f0f0f0; letter-spacing: 1px; margin-top: 4px;"
+                    )
 
                     ui.label(
                         "查询公司内部资料、项目方案、软件系统、版本历史\n移动通信领域术语、用户数据定义、表结构信息"
                     ).style("""
                         white-space: pre-line;
-
                         text-align: center;
                         line-height: 1.7;
-
                         font-size: 15px;
                         color: #9aa4b2;
-
                         max-width: 520px;
                     """)
 
@@ -655,16 +631,14 @@ def main():
                     .classes("w-full chat-area")
                     .style(
                         """
-                    flex: 1;
-                    overflow-y: auto;
-                    background: #313131;
-
-                    border: none;
-                    border-radius: 8px;
-
-                    padding: 12px;
-                    margin: 0px;
-                    """
+                        flex: 1;
+                        overflow-y: auto;
+                        background: #313131;
+                        border: none;
+                        border-radius: 8px;
+                        padding: 12px;
+                        margin: 0px;
+                        """
                     )
                 )
                 with chat_scroll:
@@ -686,11 +660,7 @@ def main():
                                 message_id += 1
                                 ui.html(item["answer"]).props(
                                     f"id=assistant-msg{message_id}"
-                                ).style(
-                                    """
-                                    width: 100%;
-                                    """
-                                )
+                                ).style("width: 100%;")
                                 context.client.run_javascript(f"""
                                 if (window.MathJax) {{
                                     MathJax.typesetPromise();
@@ -717,6 +687,17 @@ def main():
                                             flex-shrink: 0;
                                             min-width: 140px;
                                         """).classes("break-btn")
+                alen = len(chat_scroll.default_slot.children)
+                clear_badge.set_text(f"{alen}")
+                if alen == 0:
+                    clear_badge.set_background_color("gray")
+                    clear_menu_item.disable()
+                    clear_menu_item.style("filter: grayscale(100%);")
+
+                else:
+                    clear_badge.set_background_color("red")
+                    clear_menu_item.enable()
+                    clear_menu_item.style("filter: none;")
 
             # right
             right_column = ui.column().style(
@@ -754,26 +735,8 @@ def main():
         with (
             ui.row()
             .classes("w-full items-center justify-center no-wrap")
-            .style(
-                """
-                padding-top: 4px;
-                padding-bottom: 28px;
-                """
-            )
+            .style("padding-top: 4px; padding-bottom: 28px;")
         ):
-            clear_button = ui.button(
-                icon="cleaning_services", on_click=confirm_clear
-            ).props("round")
-            if len(chat_scroll.default_slot.children) > 0:
-                clear_button.enable()
-                clear_button.style("""
-                    filter: none;
-                """)
-            else:
-                clear_button.disable()
-                clear_button.style("""
-                    filter: grayscale(1);
-                """)
             with (
                 ui.input(
                     placeholder="请输入简短词汇进行字典查询，或输入完整问题进行知识库检索..."
@@ -797,7 +760,6 @@ def main():
                 from_confirm=False,
                 client=None,
             ):
-
                 try:
                     if client is None:
                         client = context.client
@@ -811,19 +773,14 @@ def main():
                     input_box.value = ""
                     send_button.disable()
                     send_button.props("loading")
-                    clear_button.disable()
-                    clear_button.style("""
-                        filter: grayscale(1);
-                    """)
+                    clear_menu_item.disable()
+                    clear_menu_item.style("filter: grayscale(1);")
+                    clear_badge.set_text(f"{len(chat_scroll.default_slot.children)}")
+                    clear_badge.set_background_color("gray")
 
                     input_box.disable()
-                    nonlocal debug_panel_shown
-                    debug_panel_shown = True
-                    show_hide_debug_panel()
-                    debug_button.disable()
-                    debug_button.style("""
-                        filter: grayscale(1);
-                    """)
+                    switch_debug.set_value(False)
+                    switch_debug.set_enabled(False)
                     log(f"Question: {message}", False)
                     # reset status
                     debug_panel.content = """
@@ -936,10 +893,7 @@ def main():
                             debug_html = build_debug_html(event["content"])
                             debug_panel.content = debug_html
                             debug_panel.update()
-                            debug_button.enable()
-                            debug_button.style("""
-                                filter: none;
-                            """)
+                            switch_debug.set_enabled(True)
 
                         # status
                         elif event["type"] == "status":
@@ -990,9 +944,6 @@ def main():
                         ref_text,
                         file_map,
                     ) = build_reference_files(source_nodes)
-
-                    # if ref_text:
-                    #     partial_text += f"\n  \n---  \n##### 参考文件\n{ref_text}"
 
                     # source buttons
                     should_show_sources = (
@@ -1055,7 +1006,6 @@ def main():
                                         continue
 
                                     shown_files.add(file_name)
-
                                     ui.button(
                                         Path(file_name).stem,
                                         icon="description",
@@ -1086,10 +1036,10 @@ def main():
                     auto_scroll_chat(client)
                     send_button.enable()
                     send_button.props(remove="loading")
-                    clear_button.enable()
-                    clear_button.style("""
-                        filter: none;
-                    """)
+                    clear_menu_item.enable()
+                    clear_menu_item.style("filter: none;")
+                    clear_badge.set_text(f"{len(chat_scroll.default_slot.children)}")
+                    clear_badge.set_background_color("red")
                     input_box.enable()
 
             # enter submit
@@ -1098,13 +1048,6 @@ def main():
                 lambda e: send_message(),
             )
             send_button.on("click", send_message)
-            debug_button = ui.button()
-            debug_button.props('icon="developer_mode" round')
-            debug_button.on("click", show_hide_debug_panel)
-            debug_button.disable()
-            debug_button.style("""
-                filter: grayscale(1);
-            """)
 
 
 @ui.page("/login")
@@ -1133,15 +1076,10 @@ def login():
         transform: translate(-50%, -30%);
     """)
     ):
-        ui.image("images/logo.png").style("""
-                        width: 128px;
-                        height: 128px;
-                        opacity: 0.9;
-                    """)
-        ui.label("企业知识库").style("""
-            font-size:28px;
-            font-weight:700;
-        """)
+        ui.image("/static/images/logo.png").style(
+            "width: 128px; height: 128px; opacity: 0.9;"
+        )
+        ui.label("企业知识库").style("font-size:28px; font-weight:700;")
 
         username = (
             ui.input(placeholder="请输入用户名")
