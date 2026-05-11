@@ -15,7 +15,7 @@ def check_cuda(settings) -> None:
     """
 
     torch_cuda_available = torch.cuda.is_available()
-    embedding_device = str(settings.embedding_device).lower()
+    embedding_device = str(settings.embedding_device_index).lower()
 
     # Case 1:
     # CUDA available, but user still uses CPU

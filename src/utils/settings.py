@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.openai_like import OpenAILike
 from llama_index.postprocessor.flag_embedding_reranker import (
     FlagEmbeddingReranker,
@@ -26,7 +25,10 @@ class Settings:
         # Embedding / Reranker
         self.embedding_model = self._required("EMBEDDING_MODEL")
         self.reranker_model = self._required("RERANKER_MODEL")
-        self.embedding_device = os.getenv("EMBEDDING_DEVICE", "cuda")
+        self.embedding_device_index = os.getenv("EMBEDDING_DEVICE", "cuda")
+        self.embedding_device_query = (
+            "cpu"  # Yes!!! fixed to CPU!!! do not change this!!!
+        )
 
         # Chunk
         self.chunk_size = int(os.getenv("CHUNK_SIZE", "1000"))
@@ -91,12 +93,6 @@ class Settings:
             extra_body={
                 "enable_thinking": False,
             },
-        )
-
-        self.embed_model = HuggingFaceEmbedding(
-            model_name=self.embedding_model,
-            device=self.embedding_device,
-            embed_batch_size=8,
         )
 
         self.reranker = FlagEmbeddingReranker(

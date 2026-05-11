@@ -6,6 +6,7 @@ from indexing.builder import IndexBuilder
 import chromadb
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core import StorageContext
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from utils.logger import logger
 from utils.settings import settings
 from utils.cuda import check_cuda
@@ -139,11 +140,18 @@ if __name__ == "__main__":
 
     # 建索引
     log("Indexing...")
+
+    index_embed_model = HuggingFaceEmbedding(
+        model_name=settings.embedding_model,
+        device=settings.embedding_device_index,
+        embed_batch_size=8,
+    )
+
     index = VectorStoreIndex(
         nodes=final_nodes,
         storage_context=storage_context,
         show_progress=True,
-        embed_model=settings.embed_model,
+        embed_model=index_embed_model,
     )
 
     log("All done ✅")

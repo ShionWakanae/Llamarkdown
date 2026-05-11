@@ -13,6 +13,7 @@ from llama_index.postprocessor.flag_embedding_reranker import FlagEmbeddingReran
 from llama_index.core.retrievers import QueryFusionRetriever
 from llama_index.retrievers.bm25 import BM25Retriever
 from llama_index.core.schema import NodeWithScore, TextNode
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 import chromadb
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core import VectorStoreIndex
@@ -549,9 +550,16 @@ class RagEngine:
         chroma_client = chromadb.PersistentClient(path="./storage/chroma_db")
         chroma_collection = chroma_client.get_or_create_collection("docs")
         vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+
+        rag_embed_model = HuggingFaceEmbedding(
+            model_name=settings.embedding_model,
+            device=settings.embedding_device_query,
+            embed_batch_size=8,
+        )
+
         index = VectorStoreIndex.from_vector_store(
             vector_store,
-            embed_model=settings.embed_model,
+            embed_model=rag_embed_model,
         )
 
         collection_data = chroma_collection.get(include=["documents", "metadatas"])
