@@ -8,6 +8,9 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core import StorageContext
 from utils.logger import logger
 from utils.settings import settings
+from utils.cuda import check_cuda
+
+check_cuda(settings)
 
 log = logger.log
 
