@@ -80,25 +80,6 @@ if settings.ref_file_path:
     app.add_static_files("/static/ref_md", f"{settings.ref_file_path}")
 
 
-def rewrite_image_paths(md_str: str, path: str, ref_file_path: str) -> str:
-    # markdown文件所在目录，相对于 REF_FILE_PATH
-    relative_dir = Path(path).parent.relative_to(ref_file_path).as_posix()
-
-    def repl(m):
-        image_path = m.group(2).replace("\\", "/")
-
-        # 拼接最终静态路径
-        full_path = f"/static/ref_md/{relative_dir}/{image_path}"
-
-        return f"![{m.group(1)}]({full_path})"
-
-    return re.sub(
-        r"!\[(.*?)\]\((.*?)\)",
-        repl,
-        md_str,
-    ).replace("//", "/")
-
-
 def render_markdown_html(md_str: str) -> str:
     rendered_html = markdown.markdown(
         md_str,
@@ -316,10 +297,7 @@ def main():
             ui.button("是", on_click=on_yes).props("dense size=sm icon='check'")
 
     def show_file_preview(name, path, hits):
-
         content = read_file_by_path(path)
-
-        content = rewrite_image_paths(content, path, settings.ref_file_path)
         highlighted_md = build_highlighted_markdown(
             content,
             hits,
@@ -773,6 +751,7 @@ def main():
                 from_confirm=False,
                 client=None,
             ):
+                partial_text = ""
                 try:
                     if client is None:
                         client = context.client
@@ -855,7 +834,6 @@ def main():
                             auto_scroll_chat(client)
 
                     # state
-                    partial_text = ""
                     source_nodes = []
                     event_source = "none"
                     got_answer = False
@@ -1077,8 +1055,9 @@ def main():
                     rendered_html = render_markdown_html(partial_text)
                     log(e)
                     print(traceback.format_exc())
-                    assistant_message.content = rendered_html
-                    assistant_message.update()
+                    if assistant_message:
+                        assistant_message.content = rendered_html
+                        assistant_message.update()
                 finally:
                     if assistant_stage_spinner:
                         assistant_stage_spinner.delete()

@@ -20,6 +20,7 @@ from llama_index.core import VectorStoreIndex
 from collections import defaultdict
 from utils.logger import logger
 from utils.settings import settings
+from pathlib import Path
 
 log = logger.log
 
@@ -27,6 +28,25 @@ warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API
 import jieba  # noqa: E402
 
 logging.set_verbosity_error()
+
+
+def rewrite_image_paths(md_str: str, path: str) -> str:
+    # markdown文件所在目录，相对于 REF_FILE_PATH
+    relative_dir = Path(path).parent.relative_to(settings.ref_file_path).as_posix()
+
+    def repl(m):
+        image_path = m.group(2).replace("\\", "/")
+
+        # 拼接最终静态路径
+        full_path = f"/static/ref_md/{relative_dir}/{image_path}"
+
+        return f"![{m.group(1)}]({full_path})"
+
+    return re.sub(
+        r"!\[(.*?)\]\((.*?)\)",
+        repl,
+        md_str,
+    ).replace("//", "/")
 
 
 class UsageCollector:
@@ -779,6 +799,12 @@ class RagEngine:
 
         # normalize nodes metadata
         nodes_selected = self.normalize_nodes_metadata(nodes_selected)
+
+        # rewrite image paths
+        for node in nodes_selected:
+            node.node.text = rewrite_image_paths(
+                node.node.text, node.node.metadata["file_path"]
+            )
 
         # build context
         context_parts = []
