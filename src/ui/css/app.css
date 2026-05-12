@@ -186,7 +186,7 @@ pre code {
     padding: 0;
 }
 
-.streaming-text {
+/* .streaming-text {
     width: 100%;
     text-align: left !important;
     white-space: pre-wrap;
@@ -197,7 +197,7 @@ pre code {
 
 .loading-text {
     animation: pulse 1.5s infinite;
-}
+} */
 
 @keyframes pulse {
 

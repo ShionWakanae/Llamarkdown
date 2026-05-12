@@ -3,6 +3,7 @@ import json
 import traceback
 import warnings
 import copy
+import time
 from rich import print
 from transformers.utils import logging
 from llama_index.core.base.llms.types import (
@@ -620,7 +621,9 @@ class RagEngine:
 
     def query(self, question, force_rag):
         if not force_rag:
+            rewrite_start = time.perf_counter()
             analysis = self.navigator.analyze_query(question, self)
+            rewrite_ms = round((time.perf_counter() - rewrite_start) * 1000, 2)
             question_type = analysis.get(
                 "question_type",
                 "RAG",
@@ -630,16 +633,21 @@ class RagEngine:
                 if question_type == "CHAT":
                     ret = "您好，我是专职的企业知识库的智能助理，您可以直接提出问题。"
                 elif question_type == "INVALID":
-                    ret = f'非常抱歉，我无法理解您说的 {question} 具体是什么意思……\n请检查拼写，或给正确的关键词加上引号，输入 "{question}" 这样带引号的方式强制查询。'
+                    ret = (
+                        f"非常抱歉，我无法理解您说的 {question} 具体是什么意思，\n"
+                        f'请检查拼写，或给关键词加上引号，输入 "{question}" 这样的方式强制查询。'
+                    )
                 else:
                     ret = "您好，请直接输入明确的需要查询的问题或关键词。"
 
-                return {
+                yield {
+                    "type": "response",
                     "question_type": question_type,
-                    "message": (ret),
+                    "message": ret,
                     "stream": None,
                     "source_nodes": [],
                 }
+                return
 
             retrieval_query = analysis.get(
                 "retrieval_query",
@@ -650,63 +658,108 @@ class RagEngine:
             presentation_intent = analysis.get("presentation_intent", "")
             if not retrieval_query:
                 retrieval_query = question
-
             log(f"[Rewrite] 意图是: {user_intent} ({presentation_intent})")
             log(f"[Rewrite] 关键词: {retrieval_query}", False)
+            timing = rewrite_ms
 
         else:
             retrieval_query = question
             user_intent = "获取信息"
             presentation_intent = "介绍"
+            log(f"[Rewrite] 强制查: {user_intent} ({presentation_intent})")
+            log(f"[Rewrite] 关键词: {retrieval_query}", False)
+            timing = 0
+
+        yield {
+            "type": "trace",
+            "stage": "识别",
+            "message": (
+                f"用户希望{user_intent}，我将查询 {retrieval_query} ({presentation_intent}) 的资料"
+            ),
+            "timing": timing,
+        }
 
         # retrieve
+        retrieve_start = time.perf_counter()
         nodes_retriever = self.retriever.retrieve(retrieval_query)
         may_dup_count = len(nodes_retriever)
 
         nodes_retriever = self.dedup_nodes(nodes_retriever, ["bm25", "vector"])
+        retrieve_ms = round((time.perf_counter() - retrieve_start) * 1000, 2)
         log(f"[Retrieve] nodes: {may_dup_count} → {len(nodes_retriever)}")
+        yield {
+            "type": "trace",
+            "stage": "召回",
+            "message": (
+                f"召回并查重的节点数量: `{may_dup_count}` → `{len(nodes_retriever)}`"
+            ),
+            "timing": retrieve_ms,
+        }
 
         # rerank
+        rerank_start = time.perf_counter()
         nodes_rerank = self.reranker.postprocess_nodes(
             nodes_retriever,
             query_str=retrieval_query,
         )
-        log(f"[Rerank] nodes: {len(nodes_rerank)}")
-
+        rerank_ms = round((time.perf_counter() - rerank_start) * 1000, 2)
         top_score = nodes_rerank[0].score if nodes_rerank else -999
+        log(f"[Rerank] nodes: {len(nodes_rerank)}, top score: {top_score:.4f}")
+        yield {
+            "type": "trace",
+            "stage": "排序",
+            "message": (
+                f"重排序后的节点数量: `{len(nodes_rerank)}`, 最高分:`{top_score:.4f}`"
+            ),
+            "timing": rerank_ms,
+        }
+
+        # dynamic select
         nodes_selected = []
-        # log(f"[Rerank] top score: {top_score}", False)
         if top_score > 0:
+            dynamic_start = time.perf_counter()
             nodes_selected = self.dynamic_rerank_select(
                 nodes=nodes_rerank,
                 base_k=settings.retrieval_rerank_top_n,
                 score_threshold=0.85,
                 max_k=settings.retrieval_rerank_top_n_max,
             )
+            dynamic_ms = round((time.perf_counter() - dynamic_start) * 1000, 2)
             log(f"[Dynamic] nodes: {len(nodes_selected)}")
+            yield {
+                "type": "trace",
+                "stage": "调整",
+                "message": f"动态选择调整后的节点数量: `{len(nodes_selected)}`",
+                "timing": dynamic_ms,
+            }
 
-        # retrieval低质量
+        # low quality retrieval
         if not nodes_selected or (
             nodes_selected[0].score < 1 and nodes_selected[-1].score < 0
         ):
+            exact_start = time.perf_counter()
             nodes_selected = nodes_rerank[: settings.retrieval_rerank_top_n]
             supplement_limit = settings.retrieval_rerank_top_n_max - len(nodes_selected)
-
             exact_nodes = self.exact_search(
                 retrieval_query,
                 existing_nodes=nodes_selected,
                 max_total=supplement_limit,
             )
+            exact_ms = round((time.perf_counter() - exact_start) * 1000, 2)
             log(f"[Exact] nodes: {len(exact_nodes)}")
+            yield {
+                "type": "trace",
+                "stage": "匹配",
+                "message": f"召回质量不足, 补充的节点数量: `{len(exact_nodes)}`",
+                "timing": exact_ms,
+            }
 
-            # 找到第一个负分位置
             insert_index = len(nodes_selected)
             for i, node in enumerate(nodes_selected):
                 if node.score < 0:
                     insert_index = i
                     break
 
-            # 插入 exact nodes
             nodes_selected = (
                 nodes_selected[:insert_index]
                 + exact_nodes
@@ -715,6 +768,14 @@ class RagEngine:
             may_dup_count1 = len(nodes_selected)
             nodes_selected = self.dedup_nodes(nodes_selected, ["exact"])
             log(f"[Final] nodes: {may_dup_count1} → {len(nodes_selected)}")
+            yield {
+                "type": "trace",
+                "stage": "匹配",
+                "message": (
+                    f"最终从知识库中提取的节点数量: `{may_dup_count1}` → `{len(nodes_selected)}`"
+                ),
+                "timing": 0,
+            }
 
         # normalize nodes metadata
         nodes_selected = self.normalize_nodes_metadata(nodes_selected)
@@ -743,6 +804,7 @@ class RagEngine:
 7. 尽量用列表的方式输出并列的内容
 8. 如果文档存在歧义，指出歧义
 10. 如果发现上下文有语义被截断的可能，提示用户`以参考文档为准！`
+
 ---
 用户真实意图：
 
@@ -772,9 +834,15 @@ class RagEngine:
 
         # final generate
         log(f"Answer starting, prompt len: {len(final_prompt)}")
-        # Path("d:\\debug.txt").write_text(final_prompt, encoding="utf-8")
+        yield {
+            "type": "trace",
+            "stage": "回答",
+            "message": "我正在阅读理解相关资料，准备回答用户问题",
+            "timing": 0,
+        }
         stream = stream_with_usage(settings.rag_llm, final_prompt, self.usage, self)
-        return {
+        yield {
+            "type": "response",
             "question_type": "RAG",
             "stream": stream,
             "source_nodes": nodes_selected,

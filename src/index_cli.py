@@ -105,7 +105,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="若苗瞬的 LlamaIndex 文档索引工具")
     parser.add_argument("doc_path", help="文档路径")
     parser.add_argument(
-        "--debug", action="store_true", help="启用调试模式,只打印分块信息，不索引和保存"
+        "--debug",
+        action="store_true",
+        help="启用调试模式, 只打印分块信息, 不索引和保存",
     )
     args = parser.parse_args()
 

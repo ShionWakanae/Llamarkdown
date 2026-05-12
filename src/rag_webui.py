@@ -740,9 +740,7 @@ def main():
             .style("padding-top: 4px; padding-bottom: 28px;")
         ):
             with (
-                ui.input(
-                    placeholder="请输入简短词汇进行字典查询，或输入完整问题进行知识库检索..."
-                )
+                ui.input(placeholder="请输入简短关键字或完整问题...")
                 .classes("chat-input")
                 .props("clearable")
                 .style("""
@@ -813,26 +811,25 @@ def main():
                             ).style("max-width: 95%;")
 
                             with llm_msg:
-                                wait_html = markdown.markdown(
-                                    "&nbsp;&nbsp;⏳我正在检索资料库，可能需要时间，请耐心等候……&nbsp;&nbsp;",
-                                )
-                                nonlocal message_id
-                                message_id += 1
-                                assistant_message = (
-                                    ui.html(
-                                        f"""
-                                    <div class="streaming-text loading-text">
-                                        {wait_html}
-                                    </div>
-                                    """
+                                with ui.column().classes(
+                                    "w-full items-start mt-0 mb-0"
+                                ):
+                                    assistant_spinner = ui.spinner("dots", size="md")
+                                    rendered_html = render_markdown_html(
+                                        "###### 思考中"
                                     )
-                                    .props(f"id=assistant-msg{message_id}")
-                                    .style(
-                                        """
-                                    width: 100%;
-                                    """
+                                    nonlocal message_id
+                                    message_id += 1
+                                    assistant_message = (
+                                        ui.html(rendered_html)
+                                        .props(f"id=assistant-msg{message_id}")
+                                        .style(
+                                            """
+                                            width: 100%;
+                                            """
+                                        )
                                     )
-                                )
+                                    auto_scroll_chat(client)
 
                             sources_container = (
                                 ui.row().classes("gap-0 mt-0 mb-0").style("width: 95%;")
@@ -847,6 +844,7 @@ def main():
                     got_answer = False
                     dct_answer = False
                     first_token = False
+                    first_trace = False
                     timing = {}
                     # background stream
                     queue = Queue()
@@ -875,7 +873,11 @@ def main():
                             got_answer = True
                             if not first_token:
                                 log("Streaming...")
-                            first_token = True
+                                partial_text = ""
+                                first_token = True
+                                if assistant_spinner:
+                                    assistant_spinner.type = "bars"
+                                    assistant_spinner.update()
                             accumulated += event["content"]
                             if "\n" in accumulated:
                                 partial_text += accumulated
@@ -883,8 +885,24 @@ def main():
                                 rendered_html = render_markdown_html(partial_text)
                                 assistant_message.content = rendered_html
                                 assistant_message.update()
-                                # auto scroll
                                 auto_scroll_chat(client)
+
+                        elif event["type"] == "trace":
+                            if not first_trace:
+                                partial_text = "###### 思考中\n\n"
+                                first_trace = True
+                            trace_stage = event["stage"]
+                            trace_message = event["message"]
+                            trace_timing = event["timing"]
+                            msg_str = f"- **[{trace_stage}]** {trace_message}"
+                            timing_str = (
+                                "" if not trace_timing else f"(_{trace_timing}ms_)"
+                            )
+                            partial_text += f"{msg_str} {timing_str}\n\n"
+                            rendered_html = render_markdown_html(partial_text)
+                            assistant_message.content = rendered_html
+                            assistant_message.update()
+                            auto_scroll_chat(client)
 
                         # sources
                         elif event["type"] == "sources":
@@ -1029,7 +1047,8 @@ def main():
                                         }
                                     )
                     else:
-                        sources_container.delete()
+                        if sources_container:
+                            sources_container.delete()
                     chat_history.append(history_item)
 
                 except Exception as e:
@@ -1041,6 +1060,8 @@ def main():
                     assistant_message.content = rendered_html
                     assistant_message.update()
                 finally:
+                    if assistant_spinner:
+                        assistant_spinner.delete()
                     auto_scroll_chat(client)
                     send_button.enable()
                     send_button.props(remove="loading")
