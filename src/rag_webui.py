@@ -76,21 +76,30 @@ def logout():
 app.add_static_files("/static/js", "./src/ui/js")
 app.add_static_files("/static/css", "./src/ui/css")
 app.add_static_files("/static/images", "./images")
-ref_path = settings.ref_file_path
-if ref_path:
-    app.add_static_files("/static/ref_md", f"{ref_path}")
+if settings.ref_file_path:
+    app.add_static_files("/static/ref_md", f"{settings.ref_file_path}")
 
 
-def rewrite_image_paths(md_str: str) -> str:
+def rewrite_image_paths(md_str: str, path: str, ref_file_path: str) -> str:
+    # markdown文件所在目录，相对于 REF_FILE_PATH
+    relative_dir = Path(path).parent.relative_to(ref_file_path).as_posix()
+
+    def repl(m):
+        image_path = m.group(2).replace("\\", "/")
+
+        # 拼接最终静态路径
+        full_path = f"/static/ref_md/{relative_dir}/{image_path}"
+
+        return f"![{m.group(1)}]({full_path})"
+
     return re.sub(
-        r"!\[(.*?)\]\(images/(.*?)\)",
-        r"![\1](/static/ref_md/images/\2)",
+        r"!\[(.*?)\]\((.*?)\)",
+        repl,
         md_str,
-    )
+    ).replace("//", "/")
 
 
 def render_markdown_html(md_str: str) -> str:
-    md_str = rewrite_image_paths(md_str)
     rendered_html = markdown.markdown(
         md_str,
         extensions=[
@@ -310,6 +319,7 @@ def main():
 
         content = read_file_by_path(path)
 
+        content = rewrite_image_paths(content, path, settings.ref_file_path)
         highlighted_md = build_highlighted_markdown(
             content,
             hits,
@@ -364,7 +374,7 @@ def main():
                 </div>
                 """)
 
-                original_path = f"{ref_path}\\pdf\\{name}.pdf"
+                original_path = f"{settings.ref_file_path}\\pdf\\{name}.pdf"
                 web_path = f"/static/ref_md/pdf/{name}.pdf"
                 # print(original_path)
                 # print(Path(original_path).exists())
@@ -742,7 +752,7 @@ def main():
             with (
                 ui.input(placeholder="请输入简短关键字或完整问题...")
                 .classes("chat-input")
-                .props("clearable")
+                .props("clearable type=text inputmode=text enterkeyhint=send")
                 .style("""
                     width: 100%;
                     max-width: 860px;
@@ -814,10 +824,10 @@ def main():
                                 with ui.column().classes(
                                     "w-full items-start mt-0 mb-0"
                                 ):
-                                    assistant_spinner = ui.spinner("dots", size="md")
-                                    rendered_html = render_markdown_html(
-                                        "###### 思考中"
-                                    )
+                                    assistant_spinner = ui.spinner(
+                                        "dots", size="md"
+                                    ).classes("mt-0 mb-0")
+                                    rendered_html = render_markdown_html("#### 思考中")
                                     nonlocal message_id
                                     message_id += 1
                                     assistant_message = (
@@ -889,7 +899,7 @@ def main():
 
                         elif event["type"] == "trace":
                             if not first_trace:
-                                partial_text = "###### 思考中\n\n"
+                                partial_text = "#### 思考中\n\n"
                                 first_trace = True
                             trace_stage = event["stage"]
                             trace_message = event["message"]
