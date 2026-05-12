@@ -692,7 +692,9 @@ def main():
                                                 📄{Path(source["file_name"]).stem}
                                                 """,
                                                 target=None,
-                                            ).style("cursor: pointer;").on(
+                                            ).style(
+                                                "cursor: pointer; text-decoration: none;"
+                                            ).props("no-caps").on(
                                                 "click",
                                                 lambda n=Path(source["file_name"]).stem, p=source["path"], h=source["hits"]: (
                                                     show_file_preview(n, p, h)
@@ -832,7 +834,7 @@ def main():
                                     ).classes("mt-0 mb-0")
                                     assistant_answer_spinner.set_visibility(False)
 
-                                    rendered_html = render_markdown_html("#### 思考中")
+                                    rendered_html = render_markdown_html("### 思考中")
                                     nonlocal message_id
                                     message_id += 1
                                     assistant_message = (
@@ -905,7 +907,7 @@ def main():
 
                         elif event["type"] == "trace":
                             if not first_trace:
-                                partial_text = "#### 思考中\n\n"
+                                partial_text = "### 思考中\n\n"
                                 first_trace = True
                             trace_stage = event["stage"]
                             trace_message = event["message"]
@@ -1049,7 +1051,9 @@ def main():
                                             📄{Path(file_name).stem}
                                             """,
                                             target=None,
-                                        ).style("cursor: pointer;").on(
+                                        ).style(
+                                            "cursor: pointer; text-decoration: none;"
+                                        ).props("no-caps").on(
                                             "click",
                                             lambda n=Path(file_name).stem, p=file_path, h=hits: (
                                                 show_file_preview(n, p, h)
