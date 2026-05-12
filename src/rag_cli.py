@@ -61,7 +61,7 @@ with Live(Text("....", style="yellow"), refresh_per_second=2) as live:
     accumulated = ""
     for event in service.stream_answer(quest_str, force_rag):
         if event["type"] == "token":
-            chunk = event["content"]
+            chunk = event["text"]
             if chunk:
                 if first:
                     log("Streaming...")
@@ -74,11 +74,11 @@ with Live(Text("....", style="yellow"), refresh_per_second=2) as live:
                     print(f"[bold bright_magenta]{accumulated}[/]", end="", flush=True)
                     accumulated = ""
         elif event["type"] == "sources":
-            source_nodes = event["content"]
+            source_nodes = event["nodes"]
         # debug
         elif event["type"] == "debug":
-            debug_data = event["content"]
-            timing = debug_data.get("timing", {})
+            debug_data = event
+            timing = debug_data
         # status
         elif event["type"] == "status":
             dct_answer = event["source"] == "dict"

@@ -63,8 +63,6 @@ def build_debug_html(debug_data):
         </div>
         """
 
-    timing = debug_data.get("timing", {})
-
     retrieval = debug_data.get(
         "retrieval",
         [],
@@ -78,19 +76,19 @@ def build_debug_html(debug_data):
     html += f"""
         <div>
             query:
-            {timing.get("query_ms", 0)}
+            {debug_data.get("query_ms", 0)}
             ms
         </div>
 
         <div>
             llm:
-            {timing.get("llm_ms", 0)}
+            {debug_data.get("llm_ms", 0)}
             ms
         </div>
 
         <div>
             total:
-            {timing.get("total_ms", 0)}
+            {debug_data.get("total_ms", 0)}
             ms
         </div>
 

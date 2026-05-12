@@ -101,7 +101,7 @@ class RagService:
 
                 yield {
                     "type": "token",
-                    "content": md,
+                    "text": md,
                 }
 
                 yield {
@@ -118,14 +118,10 @@ class RagService:
                 )
                 yield {
                     "type": "debug",
-                    "content": {
-                        "timing": {
-                            "query_ms": 0,
-                            "llm_ms": 0,
-                            "total_ms": total_ms,
-                        },
-                        "retrieval": [],
-                    },
+                    "query_ms": 0,
+                    "llm_ms": 0,
+                    "total_ms": total_ms,
+                    "retrieval": [],
                 }
                 return
             else:
@@ -158,7 +154,7 @@ class RagService:
                 if question_type != "RAG":
                     yield {
                         "type": "token",
-                        "content": event.get(
+                        "text": event.get(
                             "message",
                             "无法处理该问题。",
                         ),
@@ -169,14 +165,10 @@ class RagService:
                     )
                     yield {
                         "type": "debug",
-                        "content": {
-                            "timing": {
-                                "query_ms": 0,
-                                "llm_ms": 0,
-                                "total_ms": total_ms,
-                            },
-                            "retrieval": [],
-                        },
+                        "query_ms": 0,
+                        "llm_ms": 0,
+                        "total_ms": total_ms,
+                        "retrieval": [],
                     }
                     return
                 response = event
@@ -203,7 +195,7 @@ class RagService:
 
                 yield {
                     "type": "token",
-                    "content": token,
+                    "text": token,
                 }
 
         llm_ms = round(
@@ -219,7 +211,7 @@ class RagService:
 
         yield {
             "type": "sources",
-            "content": source_nodes,
+            "nodes": source_nodes,
         }
 
         # debug info
@@ -268,14 +260,10 @@ class RagService:
 
         yield {
             "type": "debug",
-            "content": {
-                "timing": {
-                    "query_ms": query_ms,
-                    "llm_ms": llm_ms,
-                    "total_ms": total_ms,
-                },
-                "retrieval": retrieval,
-            },
+            "query_ms": query_ms,
+            "llm_ms": llm_ms,
+            "total_ms": total_ms,
+            "retrieval": retrieval,
         }
 
         #

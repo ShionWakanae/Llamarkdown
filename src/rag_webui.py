@@ -888,7 +888,7 @@ def main():
                                 if assistant_spinner:
                                     assistant_spinner.type = "bars"
                                     assistant_spinner.update()
-                            accumulated += event["content"]
+                            accumulated += event["text"]
                             if "\n" in accumulated:
                                 partial_text += accumulated
                                 accumulated = ""
@@ -916,12 +916,12 @@ def main():
 
                         # sources
                         elif event["type"] == "sources":
-                            source_nodes = event["content"]
+                            source_nodes = event["nodes"]
 
                         # debug
                         elif event["type"] == "debug":
-                            timing = event["content"].get("timing", {})
-                            debug_html = build_debug_html(event["content"])
+                            timing = event
+                            debug_html = build_debug_html(event)
                             debug_panel.content = debug_html
                             debug_panel.update()
                             switch_debug.set_enabled(True)
