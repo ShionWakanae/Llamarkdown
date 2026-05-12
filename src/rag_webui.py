@@ -824,9 +824,14 @@ def main():
                                 with ui.column().classes(
                                     "w-full items-start mt-0 mb-0"
                                 ):
-                                    assistant_spinner = ui.spinner(
+                                    assistant_stage_spinner = ui.spinner(
                                         "dots", size="md"
                                     ).classes("mt-0 mb-0")
+                                    assistant_answer_spinner = ui.spinner(
+                                        "rings", size="lg"
+                                    ).classes("mt-0 mb-0")
+                                    assistant_answer_spinner.set_visibility(False)
+
                                     rendered_html = render_markdown_html("#### 思考中")
                                     nonlocal message_id
                                     message_id += 1
@@ -885,9 +890,10 @@ def main():
                                 log("Streaming...")
                                 partial_text = ""
                                 first_token = True
-                                if assistant_spinner:
-                                    assistant_spinner.type = "bars"
-                                    assistant_spinner.update()
+                                if assistant_stage_spinner:
+                                    assistant_stage_spinner.set_visibility(False)
+                                if assistant_answer_spinner:
+                                    assistant_answer_spinner.set_visibility(True)
                             accumulated += event["text"]
                             if "\n" in accumulated:
                                 partial_text += accumulated
@@ -1070,8 +1076,10 @@ def main():
                     assistant_message.content = rendered_html
                     assistant_message.update()
                 finally:
-                    if assistant_spinner:
-                        assistant_spinner.delete()
+                    if assistant_stage_spinner:
+                        assistant_stage_spinner.delete()
+                    if assistant_answer_spinner:
+                        assistant_answer_spinner.delete()
                     auto_scroll_chat(client)
                     send_button.enable()
                     send_button.props(remove="loading")
