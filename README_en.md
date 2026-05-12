@@ -127,6 +127,10 @@ LLM_API_KEY=sk-xxxxx                        # API key
 LLM_MODEL=gpt-4.1-mini                      # Model name
 LLM_MODEL_SMALL=                            # Small model for query rewrite
 
+VISION_API_BASE=https://api.openai.com/v1   # Vision API endpoint
+VISION_API_KEY=sk-xxxxx                     # API key
+VISION_MODEL=qwen3.6-flash                  # Model name
+
 EMBEDDING_MODEL=BAAI/bge-m3                 # Automatically downloaded from Hugging Face if needed.
 EMBEDDING_DEVICE=cuda                       # Default device is cuda, can be set to cpu
 RERANKER_MODEL=BAAI/bge-reranker-v2-m3      # Automatically downloaded from Hugging Face if needed.

@@ -116,7 +116,24 @@ if __name__ == "__main__":
     debug_mode = args.debug
 
     log("Starting...")
+    log(f"Image enhancement to: {doc_path}")
+    from indexing.VisionClient import VisionClient
+    from indexing.ImageOCREnhancer import (
+        ImageOCREnhancer,
+    )
 
+    vision_client = VisionClient(
+        api_base=settings.vision_api_base,
+        api_key=settings.vision_api_key,
+        model=settings.vision_model,
+    )
+
+    enhancer = ImageOCREnhancer(
+        vision_client=vision_client,
+        debug=debug_mode,
+    )
+
+    enhancer.process_directory(doc_path)
     # 初始化 Chroma（持久化目录）
     chroma_client = chromadb.PersistentClient(path="./storage/chroma_db")
     # collection（类似表）

@@ -21,6 +21,9 @@ class Settings:
         self.llm_model_small = (
             os.getenv("LLM_MODEL_SMALL", "").strip() or self.llm_model
         )
+        self.vision_api_base = self._required("VISION_API_BASE")
+        self.vision_api_key = self._required("VISION_API_KEY")
+        self.vision_model = self._required("VISION_MODEL")
 
         # Embedding / Reranker
         self.embedding_model = self._required("EMBEDDING_MODEL")
