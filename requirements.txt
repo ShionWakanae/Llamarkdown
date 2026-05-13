@@ -10,6 +10,7 @@ llama-index-embeddings-huggingface
 llama-index-postprocessor-flag-embedding-reranker
 llama-index-retrievers-bm25
 llama-index-vector-stores-chroma
+docling
 jieba
 python-dotenv
 markdown

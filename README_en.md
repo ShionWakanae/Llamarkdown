@@ -133,7 +133,7 @@ VECTOR_SIMILARITY_TOP_K=30                  # Number of similar content chunks t
 RETRIEVAL_RERANK_TOP_N=5                    # Number of results kept after reranking
 RETRIEVAL_RERANK_TOP_N_MAX = 10             # Max number of results after dynamic select
 
-APP_DOC_PATH = c:\app_doc                   # Application document path (contains ref_md and ori_pdf directories)
+APP_DOC_PATH = c:\app_doc                   # Application document path, must be configured (contains ref_md and ori_pdf directories)
 WEBUI_USERNAME=janedoe                      #WebUI username
 WEBUI_PASSWORD=123456                       #WebUI password
 

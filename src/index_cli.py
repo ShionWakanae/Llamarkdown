@@ -8,14 +8,15 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core import StorageContext
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from utils.logger import logger
-from utils.settings import settings
+from utils.settings import settings, REF_MD_DIR
+from pathlib import Path
 from utils.cuda import check_cuda
 from indexing.VisionClient import VisionClient
 from indexing.ImageOCREnhancer import ImageOCREnhancer
 from indexing.MarkdownTextCleaner import MarkdownTextCleaner
 
+ref_md_path = (Path(settings.app_doc_path) / REF_MD_DIR).resolve()
 check_cuda(settings)
-
 log = logger.log
 
 
@@ -91,8 +92,9 @@ def Show_debug_info_and_exit(final_nodes: list):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="若苗瞬的 LlamaIndex 文档索引工具")
-    parser.add_argument("doc_path", help="文档路径")
+    parser = argparse.ArgumentParser(
+        description="若苗瞬的RAG资料库Markdown文档索引工具"
+    )
     parser.add_argument(
         "--debug",
         action="store_true",
@@ -101,7 +103,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # 使用参数
-    doc_path = args.doc_path
+    doc_path = ref_md_path
     debug_mode = args.debug
 
     log(f"Starting {'debug mode...' if debug_mode else '...'}")

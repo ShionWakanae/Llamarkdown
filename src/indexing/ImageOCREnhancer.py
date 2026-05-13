@@ -1,10 +1,9 @@
 import hashlib
 import re
-
+import traceback
 from pathlib import Path
 from PIL import Image
 from PIL import UnidentifiedImageError
-from tqdm import tqdm
 
 
 class ImageOCREnhancer:
@@ -180,6 +179,7 @@ class ImageOCREnhancer:
 
             except Exception as e:
                 print(f"\n[ImageOCREnhancer] ERROR: {md_file} -> {e}")
+                print(traceback.format_exc())
         print()
 
     def process_markdown_file(
@@ -254,8 +254,6 @@ class ImageOCREnhancer:
                 lines,
                 i + 1,
             )
-            if self.debug:
-                print(f"[ImageOCREnhancer] parsed: {parsed}")
 
             # existing OCR exists
             if parsed:
@@ -501,6 +499,11 @@ class ImageOCREnhancer:
 
         if not caption:
             caption = "该图包含技术相关内容。"
+            if self.debug:
+                print("识别失败!")
+        else:
+            if self.debug:
+                print(f"识别成功: {caption[:10]}")
 
         self.caption_cache[image_id] = caption
 
