@@ -809,7 +809,7 @@ def main():
                                         "dots", size="md"
                                     ).classes("mt-0 mb-0")
                                     assistant_answer_spinner = ui.spinner(
-                                        "rings", size="lg"
+                                        "cube", size="sm"
                                     ).classes("mt-0 mb-0")
                                     assistant_answer_spinner.set_visibility(False)
 

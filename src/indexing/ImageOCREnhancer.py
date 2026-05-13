@@ -249,8 +249,8 @@ class ImageOCREnhancer:
                 new_text,
                 encoding="utf-8",
             )
-
-            print(f"[ImageOCREnhancer] updated: {md_path}")
+            if self.debug:
+                print(f"[ImageOCREnhancer] updated: {md_path}")
 
     #
     # OCR block
