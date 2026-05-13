@@ -10,6 +10,8 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from utils.logger import logger
 from utils.settings import settings
 from utils.cuda import check_cuda
+from indexing.VisionClient import VisionClient
+from indexing.ImageOCREnhancer import ImageOCREnhancer
 
 check_cuda(settings)
 
@@ -17,29 +19,20 @@ log = logger.log
 
 
 def print_metadata_stats(final_nodes):
-
     stats = defaultdict(Counter)
     total_nodes = len(final_nodes)
     for node in final_nodes:
         meta = node.metadata
 
-        #
         # topic
-        #
         if "topic" in meta:
             stats["topic"][meta["topic"]] += 1
 
-        #
-        # chunk_type
-        #
-        # if "chunk_type" in meta:
-        #     stats["chunk_type"][meta["chunk_type"]] += 1
-
+        # block_type : text | image | table | code | other
         if "block_type" in meta:
             stats["block_type"][meta["block_type"]] += 1
-        #
+
         # boolean metadata
-        #
         for key in [
             "has_error_code",
             "has_sql",
@@ -57,14 +50,10 @@ def print_metadata_stats(final_nodes):
     for category, counter in stats.items():
         print()
         print(f"***{category}***")
-
         total_matched = sum(counter.values())
-
         print(f"matched nodes: {total_matched}")
-
         for k, v in counter.most_common():
             percent = (v / total_nodes) * 100
-
             print(f"  {k}: {v} ({percent:.1f}%)")
 
 
@@ -92,7 +81,6 @@ def Show_debug_info_and_exit(final_nodes: list):
                 node_max_index = i
 
         print(f"Node max length:{node_max}, and min length:{node_min}")
-
         print(f"min({node_min})No.{node_min_index}", "=" * 80)
         print("[min node]", final_nodes[node_min_index])
         print(f"max({node_max})No.{node_max_index}", "=" * 80)
@@ -115,37 +103,36 @@ if __name__ == "__main__":
     doc_path = args.doc_path
     debug_mode = args.debug
 
-    log("Starting...")
-    log(f"Image enhancement to: {doc_path}")
-    from indexing.VisionClient import VisionClient
-    from indexing.ImageOCREnhancer import (
-        ImageOCREnhancer,
-    )
+    log(f"Starting {'debug mode...' if debug_mode else '...'}")
 
-    vision_client = VisionClient(
-        api_base=settings.vision_api_base,
-        api_key=settings.vision_api_key,
-        model=settings.vision_model,
-    )
+    if settings.vision_api_base:
+        log(f"Image enhancement: {doc_path}")
+        vision_client = VisionClient(
+            api_base=settings.vision_api_base,
+            api_key=settings.vision_api_key,
+            model=settings.vision_model,
+        )
+        enhancer = ImageOCREnhancer(
+            vision_client=vision_client,
+            vision_model=settings.vision_model,
+            debug=debug_mode,
+        )
+        enhancer.process_directory(doc_path)
+        # 初始化 Chroma（持久化目录）
+        chroma_client = chromadb.PersistentClient(path="./storage/chroma_db")
+        # collection（类似表）
+        chroma_collection = chroma_client.get_or_create_collection(
+            "docs", metadata={"hnsw:space": "cosine"}
+        )
+    else:
+        log("Skip image enhancement")
 
-    enhancer = ImageOCREnhancer(
-        vision_client=vision_client,
-        debug=debug_mode,
-    )
-
-    enhancer.process_directory(doc_path)
-    # 初始化 Chroma（持久化目录）
-    chroma_client = chromadb.PersistentClient(path="./storage/chroma_db")
-    # collection（类似表）
-    chroma_collection = chroma_client.get_or_create_collection(
-        "docs", metadata={"hnsw:space": "cosine"}
-    )
     # 包装成 LlamaIndex 的 vector store
     vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
     # 替换 storage_context
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-    log(f"Reading from: {doc_path}")
+    log(f"Building nodes from: {doc_path}")
     builder = IndexBuilder()
     final_nodes = builder.build_nodes(doc_path, debug_mode)
     for node in final_nodes:

@@ -25,8 +25,8 @@ class MarkdownContentAwareParser:
     CODE_FENCE_RE = re.compile(r"^(```|~~~)")
     TABLE_RE = re.compile(r"^\s*\|.*\|\s*$")
     MATH_BLOCK_RE = re.compile(r"^\s*\$\$\s*$")
-    OCR_START_RE = re.compile(r"^\*\[Image OCR\]")
-    OCR_END_RE = re.compile(r"^\[End OCR\]\*$")
+    OCR_START_RE = re.compile(r"^\*\[Image OCR\]\*\s*$")
+    OCR_END_RE = re.compile(r"^\*\[End OCR\]\*\s*$")
 
     def __init__(
         self,
