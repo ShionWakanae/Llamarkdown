@@ -111,9 +111,8 @@ def read_file_by_path(path):
 
 
 def build_highlighted_markdown(content, hits):
-
+    CODE_FENCE_RE = re.compile(r"^\s*(```+|~~~+)")
     lines = content.splitlines()
-    output = []
     first_hit_done = False
     # merge intervals
     normalized_hits = []
@@ -126,7 +125,6 @@ def build_highlighted_markdown(content, hits):
             continue
 
         _, last_end = normalized_hits[-1]
-
         if start <= last_end:
             normalized_hits[-1][1] = max(
                 last_end,
@@ -137,7 +135,6 @@ def build_highlighted_markdown(content, hits):
 
     # highlighted line set
     highlighted = set()
-
     for start, end in normalized_hits:
         for i in range(start, end):
             highlighted.add(i)
@@ -145,34 +142,60 @@ def build_highlighted_markdown(content, hits):
     # rebuild markdown
     output = []
 
+    # code fence state
+    in_code_block = False
+    current_fence = None
+
     for idx, line in enumerate(lines):
-        # highlight line
+        # detect fence
+        fence_match = CODE_FENCE_RE.match(line)
+        if fence_match:
+            fence = fence_match.group(1)
+            # entering code block
+            if not in_code_block:
+                in_code_block = True
+                current_fence = fence
+
+            # leaving code block
+            elif fence.startswith(current_fence[0]):
+                in_code_block = False
+                current_fence = None
+
+            output.append(line)
+            continue
+
+        # do not highlight inside code block
+        if in_code_block:
+            output.append(line)
+            continue
+
+        # normal highlight logic
         if idx in highlighted:
             # avoid empty line highlight issue
             if line.strip() and not line.lstrip().startswith("#"):
+                # markdown table
                 if line.lstrip().startswith("|"):
                     parts = line.split("|")
-                    # 保留原始结构，包括首尾的空字符串
+                    # preserve original structure
                     is_separator = False
-
-                    # 检查是否为分隔行（如 | --- | --- |）
-                    if len(parts) > 2:  # 至少有 3 个部分（首空 + 内容 + 尾空）
-                        # 检查非空单元格是否都是分隔符格式
+                    if len(parts) > 2:
                         non_empty_cells = [p for p in parts if p.strip()]
                         is_separator = all(
-                            all(ch in "- " for ch in cell.strip())
+                            all(ch in "- :" for ch in cell.strip())
                             and "-" in cell.strip()
                             for cell in non_empty_cells
                             if cell.strip()
                         )
 
+                    # separator row
                     if is_separator:
                         # 分隔行，保持原样
                         output.append(line)
+                    # data row
                     else:
                         # 数据行，高亮每个单元格内容
                         result_parts = ["|"]  # 开头
-                        for i, cell in enumerate(parts[1:-1], 1):  # 跳过首尾空字符串
+                        for cell in parts[1:-1]:
                             stripped = cell.strip()
                             if stripped:
                                 if not first_hit_done:
@@ -187,6 +210,7 @@ def build_highlighted_markdown(content, hits):
                         # 不需要额外加尾部的 |
                         marked_line = "".join(result_parts)
                         output.append(marked_line)
+                # markdown list
                 else:
                     # 检查当前行是否为列表项
                     m = re.match(r"^(\s*(?:\*|-|\+|\d+[.)])\s+)(.*)", line)
