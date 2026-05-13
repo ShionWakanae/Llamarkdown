@@ -503,7 +503,7 @@ class ImageOCREnhancer:
                 print("识别失败!")
         else:
             if self.debug:
-                print(f"识别成功: {caption[:10]}")
+                print(f"识别成功: {caption[:30]}")
 
         self.caption_cache[image_id] = caption
 

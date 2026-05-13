@@ -116,7 +116,11 @@ class DoclingDirectoryConverter:
                     image = element.image.pil_image
                     image_name = f"image_{image_index:06d}.png"
                     image_path = artifact_dir / image_name
-                    image.save(image_path, compress_level=9)
+                    image.save(
+                        image_path,
+                        compress_level=9,
+                        optimize=True,
+                    )
                     image_index += 1
                     element.image.uri = image_path.relative_to(
                         output_dir
