@@ -39,14 +39,133 @@ class ImageOCREnhancer:
         self.vision_model = vision_model
         self.debug = debug
 
-        #
         # runtime memory cache
-        #
         self.caption_cache = {}
 
-    #
-    # public
-    #
+    def _normalize_image_filename(
+        self,
+        md_path: Path,
+        image_rel_path: str,
+        rename_counter: int,
+        rename_map: dict,
+    ):
+        """
+        Rename ugly/long image filenames into:
+
+            img_000001.png
+
+        Returns:
+            (
+                new_image_rel_path,
+                new_image_abs_path,
+                new_rename_counter,
+            )
+        """
+
+        #
+        # resolve original path
+        #
+        original_path = (md_path.parent / image_rel_path).resolve()
+
+        #
+        # already renamed in current markdown
+        #
+        if str(original_path) in rename_map:
+            cached_rel_path = rename_map[str(original_path)]
+
+            return (
+                cached_rel_path,
+                (md_path.parent / cached_rel_path).resolve(),
+                rename_counter,
+            )
+
+        #
+        # filename only
+        #
+        filename = original_path.stem
+
+        #
+        # keep normal filenames
+        #
+        # examples:
+        #   chart
+        #   image_01
+        #   kafka_arch
+        #
+        if len(filename) <= 20 and re.match(
+            r"^[a-zA-Z0-9_\-]+$",
+            filename,
+        ):
+            return (
+                image_rel_path,
+                original_path,
+                rename_counter,
+            )
+
+        #
+        # generate new filename
+        #
+        new_filename = f"img_{rename_counter:06d}"
+
+        #
+        # preserve suffix
+        #
+        new_name = new_filename + original_path.suffix.lower()
+
+        #
+        # new relative path
+        #
+        new_rel_path = str(Path(image_rel_path).with_name(new_name)).replace("\\", "/")
+
+        #
+        # new absolute path
+        #
+        new_path = (md_path.parent / new_rel_path).resolve()
+
+        #
+        # avoid accidental overwrite
+        #
+        while new_path.exists():
+            rename_counter += 1
+
+            new_filename = f"img_{rename_counter:06d}"
+
+            new_name = new_filename + original_path.suffix.lower()
+
+            new_rel_path = str(Path(image_rel_path).with_name(new_name)).replace(
+                "\\", "/"
+            )
+
+            new_path = (md_path.parent / new_rel_path).resolve()
+
+        #
+        # rename physical file
+        #
+        original_path.rename(new_path)
+
+        #
+        # cache mapping
+        #
+        rename_map[str(original_path)] = new_rel_path
+
+        #
+        # logging
+        #
+        if self.debug:
+            print(
+                "[ImageOCREnhancer] "
+                f"renamed image:\n"
+                f"  from: {original_path.name}\n"
+                f"  to:   {new_name}"
+            )
+
+        rename_counter += 1
+
+        return (
+            new_rel_path,
+            new_path,
+            rename_counter,
+        )
 
     def process_directory(
         self,
@@ -54,71 +173,65 @@ class ImageOCREnhancer:
     ):
         root = Path(root_dir)
         md_files = list(root.rglob("*.md"))
-
-        iterator = (
-            tqdm(
-                md_files,
-                desc="Image OCR Enhancer",
-            )
-            if not self.debug
-            else md_files
-        )
-
-        for md_file in iterator:
+        for md_file in md_files:
             if self.debug:
                 print(f"[ImageOCREnhancer] processing: {md_file}")
-
             try:
                 self.process_markdown_file(md_file)
 
             except Exception as e:
                 print(f"\n[ImageOCREnhancer] ERROR: {md_file} -> {e}")
+        print()
 
     def process_markdown_file(
         self,
         md_path: Path,
     ):
-
+        rename_counter = 1
+        rename_map = {}
         text = md_path.read_text(encoding="utf-8")
-
         lines = text.splitlines()
-
         new_lines = []
-
         modified = False
 
         i = 0
-
         while i < len(lines):
             line = lines[i]
-
             image_match = self.IMAGE_RE.match(line.strip())
-
-            #
             # normal line
-            #
             if not image_match:
                 new_lines.append(line)
                 i += 1
                 continue
 
-            #
             # image line
-            #
-            new_lines.append(line)
-
             image_rel_path = image_match.group(2)
-
             image_path = (md_path.parent / image_rel_path).resolve()
 
-            #
-            # image missing
-            #
+            if not self.debug:
+                print(".", end="", flush=True)
+            # image file is missing
             if not image_path.exists():
                 print(f"[ImageOCREnhancer] missing image: {image_path}")
-
                 i += 1
                 continue
+
+            # normalize image filename
+            (
+                image_rel_path,
+                image_path,
+                rename_counter,
+            ) = self._normalize_image_filename(
+                md_path=md_path,
+                image_rel_path=image_rel_path,
+                rename_counter=rename_counter,
+                rename_map=rename_map,
+            )
+
+            new_image_line = f"![{image_match.group(1)}]({image_rel_path})"
+            new_lines.append(new_image_line)
+            if new_image_line != line:
+                modified = True
 
             #
             # image meaningful?
