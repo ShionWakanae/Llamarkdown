@@ -289,23 +289,7 @@ class IndexBuilder:
         ).load_data()
 
         for doc in documents:
-            text = doc.get_content()
-
-            cleaned = (
-                text.replace(
-                    "\r\n",
-                    "\n",
-                )
-                .replace(
-                    "\r",
-                    "\n",
-                )
-                .replace(
-                    r"\_",
-                    "_",
-                )
-            )
-            doc.text_resource.text = cleaned
+            doc.text_resource.text = doc.get_content()
         return documents
 
     def _build_markdown_heading_nodes(

@@ -12,6 +12,7 @@ from utils.settings import settings
 from utils.cuda import check_cuda
 from indexing.VisionClient import VisionClient
 from indexing.ImageOCREnhancer import ImageOCREnhancer
+from indexing.MarkdownTextCleaner import MarkdownTextCleaner
 
 check_cuda(settings)
 
@@ -104,6 +105,9 @@ if __name__ == "__main__":
     debug_mode = args.debug
 
     log(f"Starting {'debug mode...' if debug_mode else '...'}")
+
+    # clean markdown files
+    MarkdownTextCleaner.clean_markdown_files(doc_path, log_func=log, debug=debug_mode)
 
     if settings.vision_api_base:
         log(f"Image enhancement: {doc_path}")

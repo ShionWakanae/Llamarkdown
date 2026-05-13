@@ -129,7 +129,6 @@ class MarkdownHeadingAwareParser:
             nodes.append(node)
 
         for line_no, line in enumerate(lines):
-            line = line.replace("\\_", "_")
             match = self.HEADER_RE.match(line)
 
             #
