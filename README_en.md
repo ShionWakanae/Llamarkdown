@@ -93,26 +93,14 @@ I am experimenting with building applications based on LlamaIndex. Like this lit
 
 ### (0) Convert Documents to Markdown
 
-> [!Important]  
-> To focus on indexing and retrieval (including debugging), only Markdown format is currently supported.  
-> Convert documents to `.md` format before proceeding. Tools include: markitdown, pymupdf4llm, docling, marker, etc.  
->
-> Refer to `MarkItDownSample.py` for usage examples.  
-> This sample does not run directly in this project; follow the official setup instructions.  
->
-> The sample mainly demonstrates handling images in Word (e.g., diagrams, flowcharts, architecture diagrams), converting them into textual descriptions. However, a single prompt does not perform well across diverse image types. A multi-agent pipeline would be more effective—this is a separate topic with its own challenges.  
->
-> Manually review converted `.md` files to ensure:
-> - Correct formatting  
-> - Proper section structure  
-> - Tables are aligned  
-> - Image descriptions are accurate  
-> - No table of contents (TOC)  
->
-> Initial manual effort improves downstream automation quality.
-
-Example command:
-    python .\MarkItDownSample.py "Input dir" "Output dir"
+> [!Important]。
+> Before you start, please convert your documents to markdown format. 
+> You can use [markitdown](https://github.com/microsoft/markitdown)，[pymupdf4llm](https://github.com/pymupdf/PyMuPDF4LLM)，[docling](https://github.com/docling-project/docling)，[marker](https://github.com/datalab-to/marker)......
+> 
+> I am using docling to convert docx files to markdown files, and extract images to external files.
+``` shell
+docling --device cuda --no-ocr --image-export-mode referenced --output "c:\app_doc" "D:\xxx\file.docx" 
+```
 
 ---
 
@@ -145,7 +133,7 @@ VECTOR_SIMILARITY_TOP_K=30                  # Number of similar content chunks t
 RETRIEVAL_RERANK_TOP_N=5                    # Number of results kept after reranking
 RETRIEVAL_RERANK_TOP_N_MAX = 10             # Max number of results after dynamic select
 
-REF_FILE_PATH="Path_To"                     # Path to reference documents (used for image rendering and locate source file)
+APP_DOC_PATH = c:\app_doc                   # Application document path (contains ref_md and ori_pdf directories)
 WEBUI_USERNAME=janedoe                      #WebUI username
 WEBUI_PASSWORD=123456                       #WebUI password
 

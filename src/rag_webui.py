@@ -14,7 +14,7 @@ import re
 from rag.formatter import build_reference_files
 from rag.formatter import build_debug_html
 from utils.logger import logger
-from utils.settings import settings, rewrite_image_paths
+from utils.settings import settings, rewrite_image_paths, REF_MD_DIR, ORI_PDF_DIR
 
 version_num = "0.1.2"
 
@@ -76,8 +76,9 @@ def logout():
 app.add_static_files("/static/js", "./src/ui/js")
 app.add_static_files("/static/css", "./src/ui/css")
 app.add_static_files("/static/images", "./images")
-if settings.ref_file_path:
-    app.add_static_files("/static/ref_md", f"{settings.ref_file_path}")
+if settings.app_doc_path:
+    app.add_static_files("/static/ref_md", f"{settings.app_doc_path}/{REF_MD_DIR}")
+    app.add_static_files("/static/ori_pdf", f"{settings.app_doc_path}/{ORI_PDF_DIR}")
 
 
 def render_markdown_html(md_str: str, class_name: str = "final-markdown") -> str:
@@ -380,8 +381,8 @@ def main():
                 </div>
                 """)
 
-                original_path = f"{settings.ref_file_path}\\pdf\\{name}.pdf"
-                web_path = f"/static/ref_md/pdf/{name}.pdf"
+                original_path = f"{settings.app_doc_path}\\{ORI_PDF_DIR}\\{name}.pdf"
+                web_path = f"/static/ori_pdf/{name}.pdf"
                 # print(original_path)
                 # print(Path(original_path).exists())
                 # print(web_path)

@@ -8,15 +8,17 @@ from llama_index.postprocessor.flag_embedding_reranker import (
 from pathlib import Path
 import re
 
+REF_MD_DIR = "ref_md"
+ORI_PDF_DIR = "ori_pdf"
+
 
 def rewrite_image_paths(md_str: str, path: str) -> str:
-    # markdown文件所在目录，相对于 REF_FILE_PATH
-    relative_dir = Path(path).parent.relative_to(settings.ref_file_path).as_posix()
+    ref_md_path = Path(settings.app_doc_path) / REF_MD_DIR
+    relative_dir = Path(path).parent.relative_to(ref_md_path).as_posix()
 
     def repl(m):
         image_path = m.group(2).replace("\\", "/")
 
-        # 拼接最终静态路径
         full_path = f"/static/ref_md/{relative_dir}/{image_path}"
 
         return f"![{m.group(1)}]({full_path})"
@@ -68,7 +70,7 @@ class Settings:
         )
 
         # Other
-        self.ref_file_path = os.getenv("REF_FILE_PATH", "")
+        self.app_doc_path = os.getenv("APP_DOC_PATH", "")
         self.storage_secret = self._required("STORAGE_SECRET")  # you need this
 
         # Prompts
