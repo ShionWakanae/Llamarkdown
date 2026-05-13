@@ -80,7 +80,7 @@ if settings.ref_file_path:
     app.add_static_files("/static/ref_md", f"{settings.ref_file_path}")
 
 
-def render_markdown_html(md_str: str) -> str:
+def render_markdown_html(md_str: str, class_name: str = "final-markdown") -> str:
     rendered_html = markdown.markdown(
         md_str,
         extensions=[
@@ -93,7 +93,7 @@ def render_markdown_html(md_str: str) -> str:
         ],
     )
     return f"""
-            <div class="final-markdown">
+            <div class="{class_name}">
                 {rendered_html}
             </div>"""
 
@@ -308,6 +308,7 @@ def main():
         )
         highlighted_html = render_markdown_html(
             highlighted_md,
+            class_name="markdown-preview-light",
         )
 
         with ui.dialog().props("maximized persistent") as dialog:
@@ -376,10 +377,11 @@ def main():
                     """
                     flex: 1;
                     overflow-y: auto;
-                    background: #1b1b1b;
-                    border: 1px solid #3a3a3a;
+                    background: white;
+                    border: 1px solid #d0d0d0;
                     border-radius: 8px;
                     padding: 8px;
+                    color-scheme: light;
                     """
                 )
 
