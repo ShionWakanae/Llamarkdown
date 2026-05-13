@@ -119,14 +119,14 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 > 若转换效果不佳，可自行尝试微软的 [markitdown](https://github.com/microsoft/markitdown)，或者 [pymupdf4llm](https://github.com/pymupdf/PyMuPDF4LLM)，[marker](https://github.com/datalab-to/marker) 等等……
 > 
 
-将docx/pdf转换为md并存储到`APP_DOC_PATH`的`ref_md`目录下,把文档中图片提取成为外部图片文件引用。
+将docx/pdf转换为md并存储到`APP_DOC_PATH`的`ref_md`目录下,把文档中图片提取成为外部图片文件引用。  
 如果是pdf文档可选择复制到`APP_DOC_PATH`的`ori_pdf`目录下。
 ``` shell
 python .\src\convert_cli.py "input_path"
 ```
 
 ### （2）建立知识库
-索引`APP_DOC_PATH`中`ref_md`目录下的`.md`类型的文件：
+索引`APP_DOC_PATH`中`ref_md`目录下的`.md`类型的文件：  
 ℹ️ 建议先通过debug参数，观察这批文档的分块情况，确认没问题再正式索引：
 ``` shell
 python .\src\index_cli.py --debug    #只会预处理文档，打印日志，不会索引向量

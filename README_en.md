@@ -131,8 +131,7 @@ python .\src\convert_cli.py "input_path"
 ```
 
 ### (2) Build the Knowledge Base
-Index `.md` files under the `ref_md` directory inside `APP_DOC_PATH`:
-
+Index `.md` files under the `ref_md` directory inside `APP_DOC_PATH`:  
 ℹ️ It is recommended to first use the debug parameter to inspect chunking results before performing actual indexing:
 
 ``` shell
