@@ -5,6 +5,27 @@ from llama_index.llms.openai_like import OpenAILike
 from llama_index.postprocessor.flag_embedding_reranker import (
     FlagEmbeddingReranker,
 )
+from pathlib import Path
+import re
+
+
+def rewrite_image_paths(md_str: str, path: str) -> str:
+    # markdown文件所在目录，相对于 REF_FILE_PATH
+    relative_dir = Path(path).parent.relative_to(settings.ref_file_path).as_posix()
+
+    def repl(m):
+        image_path = m.group(2).replace("\\", "/")
+
+        # 拼接最终静态路径
+        full_path = f"/static/ref_md/{relative_dir}/{image_path}"
+
+        return f"![{m.group(1)}]({full_path})"
+
+    return re.sub(
+        r"!\[(.*?)\]\((.*?)\)",
+        repl,
+        md_str,
+    ).replace("//", "/")
 
 
 class Settings:

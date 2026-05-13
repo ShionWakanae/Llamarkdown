@@ -14,7 +14,7 @@ import re
 from rag.formatter import build_reference_files
 from rag.formatter import build_debug_html
 from utils.logger import logger
-from utils.settings import settings
+from utils.settings import settings, rewrite_image_paths
 
 version_num = "0.1.2"
 
@@ -302,7 +302,10 @@ def main():
             content,
             hits,
         )
-
+        highlighted_md = rewrite_image_paths(
+            highlighted_md,
+            path,
+        )
         highlighted_html = render_markdown_html(
             highlighted_md,
         )
