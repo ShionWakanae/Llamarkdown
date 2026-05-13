@@ -13,20 +13,19 @@ class ImageOCREnhancer:
     OCR_END_LINE_RE = re.compile(r"^\*\[End OCR\]\*\s*$")
     OCR_ID_RE = re.compile(r"^id:\s*(.+?)\s*$")
     PROMPT = """
-请分析这张图片，用于企业知识库RAG系统中的图片摘要。
+请为企业知识库生成图片摘要。
 
 要求：
+- 仅提取关键模块、层次、组件、连接关系
+- 忽略装饰图标、颜色、按钮样式
+- 不做解释和推理
+- 不逐字OCR
 - 使用简体中文
-- 简洁准确
-- 不要幻觉
-- 不要大量OCR
-- 不要逐字转录
-- 不要推测结论
-- 仅保留关键结构、组件、关系、标签
-- 适合语义检索
-- 控制在80字以内
+- 适合RAG语义检索
+- 80字以内
 
-直接输出摘要正文。
+输出：
+一句摘要。
 """.strip()
 
     def __init__(
@@ -385,6 +384,7 @@ class ImageOCREnhancer:
             caption.strip(),
             "",
             "*[End OCR]*",
+            "",
         ]
 
     def _parse_existing_ocr_block(

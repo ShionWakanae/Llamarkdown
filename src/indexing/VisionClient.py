@@ -11,7 +11,7 @@ class VisionClient:
         api_base: str,
         api_key: str,
         model: str,
-        timeout: int = 300,
+        timeout: int = 120,
     ):
         self.model = model
         self.client = OpenAI(
@@ -46,7 +46,9 @@ class VisionClient:
                     ],
                 }
             ],
-            temperature=0.0,
+            max_tokens=4096,
+            temperature=0.1,
+            top_p=0.8,
         )
         content = response.choices[0].message.content
         return (content or "").strip()
