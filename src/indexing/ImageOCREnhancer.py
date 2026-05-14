@@ -598,7 +598,7 @@ class ImageOCREnhancer:
         #
         # too small
         #
-        if w < 300 or h < 120:
+        if w < 300 or h < 80:
             return False
 
         #
