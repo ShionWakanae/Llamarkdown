@@ -41,12 +41,12 @@ class Logger:
         # < 1 hour
         #
         if minutes < 60:
-            return f"{minutes}m {seconds:02d}s"
+            return f"{minutes}m{seconds:02d}s"
 
         hours = minutes // 60
         minutes = minutes % 60
 
-        return f"{hours}h {minutes:02d}m {seconds:02d}s"
+        return f"{hours}h{minutes:02d}m{seconds:02d}s"
 
     def log(self, msg, display_last_log_interval=True):
         now = datetime.datetime.now()
@@ -59,7 +59,7 @@ class Logger:
             and (self._last_timestamp is not None)
             and (delta_ms >= 10)
         ):
-            interval_str = f"  <{self.format_duration(delta_ms)}>"
+            interval_str = f"  <[purple]{self.format_duration(delta_ms)}[/]>"
 
         self._last_timestamp = now
         print(f"[{timestamp_str}] {msg}{interval_str}")
