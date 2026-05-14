@@ -8,6 +8,7 @@ from llama_index.postprocessor.flag_embedding_reranker import (
 from pathlib import Path
 import re
 
+version_num = "0.2.0"
 REF_MD_DIR = "ref_md"
 ORI_PDF_DIR = "ori_pdf"
 

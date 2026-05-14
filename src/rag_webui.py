@@ -14,9 +14,13 @@ import re
 from rag.formatter import build_reference_files
 from rag.formatter import build_debug_html
 from utils.logger import logger
-from utils.settings import settings, rewrite_image_paths, REF_MD_DIR, ORI_PDF_DIR
-
-version_num = "0.1.2"
+from utils.settings import (
+    settings,
+    rewrite_image_paths,
+    REF_MD_DIR,
+    ORI_PDF_DIR,
+    version_num,
+)
 
 
 class FilteredStderr:
