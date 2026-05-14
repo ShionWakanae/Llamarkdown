@@ -15,7 +15,7 @@ class Logger:
         if (
             display_last_log_interval
             and (self._last_timestamp is not None)
-            and (delta_ms >= 1)
+            and (delta_ms >= 10)
         ):
             interval_str = f"  <{int(delta_ms)}ms>"
 

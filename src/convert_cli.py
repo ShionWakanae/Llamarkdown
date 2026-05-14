@@ -7,13 +7,12 @@ from docling.document_converter import DocumentConverter
 from docling_core.types.doc import ImageRefMode
 from docling_core.types.doc import PictureItem
 from utils.settings import settings, REF_MD_DIR
+from utils.logger import logger
 
+log = logger.log
 ref_md_path = (Path(settings.app_doc_path) / REF_MD_DIR).resolve()
 
-SUPPORTED_EXTS = {
-    ".pdf",
-    ".docx",
-}
+SUPPORTED_EXTS = {".pdf", ".docx", ".xlsx", ".pptx"}
 
 
 class DoclingDirectoryConverter:
@@ -27,9 +26,6 @@ class DoclingDirectoryConverter:
         self.save_original_pdf = save_original_pdf
         self.converter = DocumentConverter()
 
-    def log(self, msg: str):
-        print(f"[cyan][Docling][/cyan] {msg}")
-
     def run(self):
         files = []
         for path in self.input_dir.rglob("*"):
@@ -37,10 +33,10 @@ class DoclingDirectoryConverter:
                 files.append(path)
 
         if not files:
-            self.log("No supported files found.")
+            log("No supported files found.")
             return
 
-        self.log(f"Found {len(files)} files.")
+        log(f"Found {len(files)} files.")
         success = 0
         failed = 0
 
@@ -53,7 +49,7 @@ class DoclingDirectoryConverter:
 
             except Exception as e:
                 failed += 1
-                self.log(f"[red]FAILED[/red]: {file_path}")
+                log(f"[red]FAILED[/red]: {file_path}")
                 print(e)
 
         print()
@@ -70,7 +66,7 @@ class DoclingDirectoryConverter:
             exist_ok=True,
         )
 
-        self.log(f"Converting: {input_file}")
+        log(f"Converting: {input_file}")
 
         # docling convert
         result = self.converter.convert(str(input_file))
@@ -92,7 +88,7 @@ class DoclingDirectoryConverter:
             markdown,
             encoding="utf-8",
         )
-        self.log(f"[green]OK[/green]: {output_md}")
+        log(f"[green]OK[/green]: {output_md}")
 
     def export_images(
         self,
@@ -137,7 +133,7 @@ class DoclingDirectoryConverter:
                     ).as_posix()  # set uri manually
 
                 except Exception as e:
-                    self.log(f"[yellow]Image export failed[/yellow]: {e}")
+                    log(f"[yellow]Image export failed[/yellow]: {e}")
                     print(traceback.format_exc())
 
     def copy_original_pdf(

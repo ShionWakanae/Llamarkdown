@@ -4,6 +4,7 @@ import traceback
 from pathlib import Path
 from PIL import Image
 from PIL import UnidentifiedImageError
+from collections import Counter
 from utils.logger import logger
 from rich import print
 
@@ -41,7 +42,19 @@ class ImageOCREnhancer:
         self.vision_client = vision_client
         self.vision_model = vision_model
         self.debug = debug
-
+        self.stats = Counter(
+            {
+                "md_files": 0,
+                "images_total": 0,
+                "images_meaningful": 0,
+                "ocr_generated_success": 0,
+                "ocr_generated_failed": 0,
+                "cache_hit": 0,
+                "skip_small": 0,
+                "skip_existing": 0,
+                "missing_image": 0,
+            }
+        )
         # runtime memory cache
         self.caption_cache = {}
 
@@ -130,15 +143,11 @@ class ImageOCREnhancer:
         #
         while new_path.exists():
             rename_counter += 1
-
             new_filename = f"img_{rename_counter:06d}"
-
             new_name = new_filename + original_path.suffix.lower()
-
             new_rel_path = str(Path(image_rel_path).with_name(new_name)).replace(
                 "\\", "/"
             )
-
             new_path = (md_path.parent / new_rel_path).resolve()
 
         #
@@ -181,11 +190,24 @@ class ImageOCREnhancer:
                 log(f"[OCR+] processing: {md_file}")
             try:
                 self.process_markdown_file(md_file)
+                self.stats["md_files"] += 1
 
             except Exception as e:
                 log(f"\n[OCR+] ERROR: {md_file} -> {e}")
                 print(traceback.format_exc())
         print()
+        if self.debug:
+            print("=" * 60)
+            print("OCR SUMMARY")
+            print("=" * 60)
+            for k, v in self.stats.items():
+                print(f"{k}: {v}")
+            print("=" * 60)
+            print()
+        else:
+            log(
+                f"[OCR+] processed {self.stats['md_files']} files, {self.stats['images_total']} images, need OCR {self.stats['images_meaningful'] - self.stats['skip_existing']} images, {self.stats['ocr_generated_success']} [green]OK[/], {self.stats['ocr_generated_failed']} [bold red]failed[/]."
+            )
 
     def process_markdown_file(
         self,
@@ -209,14 +231,19 @@ class ImageOCREnhancer:
                 continue
 
             # image line
+            self.stats["images_total"] += 1
+            if not self.debug:
+                print(
+                    f"\r..........................({self.stats['images_total']})",
+                    end="",
+                    flush=True,
+                )
             image_rel_path = image_match.group(2)
             image_path = (md_path.parent / image_rel_path).resolve()
-
-            if not self.debug:
-                print(".", end="", flush=True)
             # image file is missing
             if not image_path.exists():
                 log(f"[OCR+] missing image: {image_path.name}")
+                self.stats["missing_image"] += 1
                 i += 1
                 continue
 
@@ -243,13 +270,14 @@ class ImageOCREnhancer:
             if not self._is_meaningful_image(image_path):
                 if self.debug:
                     log(f"[OCR+] skip meaningless image: {image_path.name}")
-
+                self.stats["skip_small"] += 1
                 i += 1
                 continue
 
             #
             # current image id
             #
+            self.stats["images_meaningful"] += 1
             image_id = self._compute_image_id(image_path)
 
             #
@@ -309,6 +337,7 @@ class ImageOCREnhancer:
                     #
                     # keep original block
                     #
+                    self.stats["skip_existing"] += 1
                     for k in range(
                         i + 1,
                         block_end + 1,
@@ -490,6 +519,7 @@ class ImageOCREnhancer:
         # memory cache
         #
         if image_id in self.caption_cache:
+            self.stats["cache_hit"] += 1
             if self.debug:
                 log("[OCR+] caption cache hit")
 
@@ -508,9 +538,11 @@ class ImageOCREnhancer:
 
         if not caption:
             caption = not_ocrable
+            self.stats["ocr_generated_failed"] += 1
             if self.debug:
                 print("[bold red]识别失败![/bold red]")
         else:
+            self.stats["ocr_generated_success"] += 1
             if self.debug:
                 print(f"识别成功: {caption[:30]}...")
 

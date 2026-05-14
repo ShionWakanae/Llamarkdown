@@ -82,11 +82,11 @@ class MarkdownTextCleaner:
 
                     changed_count += 1
                     if debug:
-                        log_func(f"Markdown cleaned: {md_file}")
+                        log_func(f"[FIX+] cleaned: {md_file}")
 
             except Exception as e:
-                log_func(f"Markdown clean failed: {md_file} : {e}")
+                log_func(f"[FIX+] clean failed: {md_file} : {e}")
 
         log_func(
-            f"Markdown clean finished: {changed_count}/{len(md_files)} files changed"
+            f"[FIX+] clean finished: {changed_count}/{len(md_files)} files changed"
         )

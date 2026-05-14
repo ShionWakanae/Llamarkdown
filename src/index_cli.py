@@ -106,13 +106,15 @@ if __name__ == "__main__":
     doc_path = ref_md_path
     debug_mode = args.debug
 
-    log(f"Starting {'debug mode...' if debug_mode else '...'}")
+    log(
+        f"Start with APP_DOC_PATH:`{doc_path}`{' in debug mode...' if debug_mode else '...'}"
+    )
 
     # clean markdown files
     MarkdownTextCleaner.clean_markdown_files(doc_path, log_func=log, debug=debug_mode)
 
     if settings.vision_api_base:
-        log(f"Image enhancement: {doc_path}")
+        log("[OCR+] Image enhancement...")
         vision_client = VisionClient(
             api_base=settings.vision_api_base,
             api_key=settings.vision_api_key,
@@ -131,14 +133,14 @@ if __name__ == "__main__":
             "docs", metadata={"hnsw:space": "cosine"}
         )
     else:
-        log("Skip image enhancement")
+        log("[OCR+] Skip image enhancement")
 
     # 包装成 LlamaIndex 的 vector store
     vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
     # 替换 storage_context
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-    log(f"Building nodes from: {doc_path}")
+    log("[VECTOR] Building...")
     builder = IndexBuilder()
     final_nodes = builder.build_nodes(doc_path, debug_mode)
     for node in final_nodes:
@@ -151,7 +153,7 @@ if __name__ == "__main__":
         Show_debug_info_and_exit(final_nodes)
 
     # 建索引
-    log("Indexing...")
+    log("[VECTOR] Indexing...")
 
     index_embed_model = HuggingFaceEmbedding(
         model_name=settings.embedding_model,
