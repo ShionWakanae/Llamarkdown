@@ -6,6 +6,9 @@
 
 ## What Is This Project About
 I am trying to learn and understand enterprise knowledge bases and RAG from scratch by developing applications based on LlamaIndex — just like this little cat.  
+The goal is to build a knowledge base QA system for telecom and mobile network enterprises, with high recall accuracy, fast response times, and the ability to trace back to the original source.
+Especially, it is based on security factors, and does not require internet access.
+![]()
 ![](res/cat_typing.gif)
 
 ## About LlamaIndex
@@ -14,10 +17,18 @@ I am trying to learn and understand enterprise knowledge bases and RAG from scra
 
 
 ## Features
-### (1) Build the Knowledge Base
+
+### (1) Convert the Original Document to Markdown Format
+
+1. Convert the original document to Markdown format.
+2. Fix the Markdown file format.
+3. Save images from the original document to external files and reference them in the Markdown file.
+4. Recognize and add image data blocks to the Markdown file.
+
+### (2) Build the Knowledge Base
 
 1. Build the vector database required for RAG. Data is stored in `project/storage/chroma_db` (using embedded Chroma DB).
-   * Supports Markdown files with properly structured headings.
+
    * A custom heading structure parser performs chunking based on Markdown heading hierarchy.
    * A custom content-aware parser chunks subsection content based on text, tables, code blocks, and more.
    * Adds metadata to chunks (original file directory, filename, start/end line numbers).
@@ -34,7 +45,7 @@ I am trying to learn and understand enterprise knowledge bases and RAG from scra
    * Supports duplicate keywords, allowing multiple lines to explain the same term.
    * This feature was added specifically for industry use cases. Technical terms, field structures, and any keyword-definition mappings can be retrieved quickly.
    
-### (2) Query and Retrieval
+### (3) Query and Retrieval
 
 1. Fast dictionary lookup
    * Performs millisecond-level dictionary lookup for single words or terms.
@@ -66,10 +77,11 @@ I am trying to learn and understand enterprise knowledge bases and RAG from scra
 `git clone https://github.com/ShionWakanae/llamaIndexSample.git`
 1. Create a virtual environment inside the directory: `python -m venv venv`
 2. Activate the virtual environment: `.\venv\scripts\activate`
-3. Install dependencies: `pip install -r requirements.txt`
+3. Install CUDA dependencies: `pip install -r requirements_cuda.txt`  (if using CUDA acceleration)
+4. Install dependencies: `pip install -r requirements.txt`
 
 ## Usage
-### (0) Configure LLMs and Models
+### (0) Parameter Configurationℹ️
 
 Copy `.env_sample` to `.env`, then modify the API endpoints, API keys, model configurations (local or online), and other settings as needed. Most other parameters can initially remain unchanged.
 
@@ -111,7 +123,7 @@ PORT=7860                                   # WebUI port
 💡 About GPU acceleration:
 
 If you do not have an NVIDIA GPU, change `EMBEDDING_DEVICE=cuda` to `cpu`.  
-If you have an NVIDIA GPU, install the CUDA version of PyTorch:
+If you have an NVIDIA GPU, install the CUDA version of PyTorch, and if you have already installed the CPU version, uninstall it first:
 ``` shell
 pip uninstall torch torchvision torchaudio
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
@@ -119,20 +131,23 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 
 If you are unsure about CUDA versions, please refer to: [CUDA Version Notes](./doc/cuda.md).
 
-### (1) Convert Documents to Markdown
+### (1) Convert Documentsℹ️
 > If the conversion quality is unsatisfactory, you may also try Microsoft's [markitdown](https://github.com/microsoft/markitdown), or alternatives such as [pymupdf4llm](https://github.com/pymupdf/PyMuPDF4LLM), [marker](https://github.com/datalab-to/marker), and others...
-> 
 
-Convert docx/pdf files into Markdown and store them in the `ref_md` directory under `APP_DOC_PATH`, while extracting images as external image references.  
-For PDF files, you may optionally copy the original PDF into the `ori_pdf` directory under `APP_DOC_PATH`.
+Extract images from documents such as docx/pdf and convert them to markdown with a directory structure, then store the results in the `ref_md` directory under `APP_DOC_PATH`.  
+If the document is a PDF, you may choose to copy it to the `ori_pdf` directory under `APP_DOC_PATH`.  
+You can also place already converted markdown files directly into the `ref_md` directory under `APP_DOC_PATH`.  
+After adding or modifying files, the knowledge base needs to be re-indexed.
+
+
 
 ``` shell
 python .\src\convert_cli.py "input_path"
 ```
 
-### (2) Build the Knowledge Base
+### (2) Build the Knowledge Baseℹ️
 Index `.md` files under the `ref_md` directory inside `APP_DOC_PATH`:  
-ℹ️ It is recommended to first use the debug parameter to inspect chunking results before performing actual indexing:
+It is recommended to first use the debug parameter to inspect chunking results before performing actual indexing:
 
 ``` shell
 python .\src\index_cli.py --debug    # Only preprocesses documents and prints logs without indexing vectors
@@ -149,7 +164,7 @@ i9-12900F * Generating embeddings: 100%|█████████████�
 4060TI16G * Generating embeddings: 100%|█████████████████████| 582/582 [00:30<00:00, 19.26it/s]
 ```
 
-### (3) Query the Knowledge Base
+### (3) Query the Knowledge Baseℹ️
 #### CLI Query
 ``` shell
 python .\src\rag_cli.py 'your question'
@@ -164,7 +179,8 @@ python .\src\reg_webui.py
 2. Open your browser and visit `http://127.0.0.1:7860/` to query the knowledge base.  
 Enter questions in the input box at the bottom of the page. Chat history is displayed above.  
 Click a `.md` reference file to open a dialog for viewing its contents.  
-Debug information, timing, and hit statistics are displayed on the right side. Use the CLI for more detailed information.
+Debug information, timing, and hit statistics are displayed on the right side. Use the CLI for more detailed information.  
+PS: Mobile and tablet users can also access the WebUI.
 
 ![](res/webui.png)
 
@@ -201,4 +217,6 @@ More videos are continuously being uploaded. Please check the channel if needed.
 ## License
 ![license](https://img.shields.io/github/license/ShionWakanae/llamaIndexSample.svg "MIT license")
 
-According to the LlamaIndex license statement, this project is released under the MIT License.
+Third-party libraries:
+- Docling (MIT)
+- LlamaIndex (MIT)
