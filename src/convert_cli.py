@@ -107,14 +107,14 @@ class DoclingDirectoryConverter:
             exist_ok=True,
         )
 
-        image_index = 0
+        image_index = 1
         # walk doc items
         for element, _level in result.document.iterate_items():
             # picture
             if isinstance(element, PictureItem) and element.image:
                 try:
                     image = element.image.pil_image
-                    image_name = f"image_{image_index:06d}.png"
+                    image_name = f"img_{image_index:06d}.png"
                     image_path = artifact_dir / image_name
                     image.save(
                         image_path,
