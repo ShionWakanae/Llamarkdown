@@ -339,11 +339,11 @@ def main():
         with ui.dialog().props("maximized persistent") as dialog:
             with ui.card().style(
                 """
-        width: 1200px;
-        max-width: 90vw;
+        width: 1280px;
+        max-width: 92vw;
 
-        height: 900px;
-        max-height: 90vh;
+        height: 960px;
+        max-height: 92vh;
 
         position: relative;
 
@@ -402,17 +402,20 @@ def main():
                     """
                     flex: 1;
                     overflow-y: auto;
-                    background: white;
+                    background: #ddc;
                     border: 1px solid #d0d0d0;
                     border-radius: 8px;
                     padding: 8px;
                     color-scheme: light;
+                    scrollbar-color: #999 #ddc;
+                    scrollbar-width: auto;
                     """
                 )
 
                 with ui.row().classes("w-full justify-center"):
                     ui.button(
                         "关闭",
+                        icon="close",
                         on_click=dialog.close,
                     ).style(
                         """
@@ -1020,7 +1023,7 @@ def main():
                     footer = f"""
                         <br>
                         <div style="text-align:right; font-size:12px; color:#888888 !important;">
-                        {source_hint}&nbsp;&nbsp;&nbsp;&nbsp; {speed_str}{total_ms}ms &nbsp;&nbsp;&nbsp;&nbsp; {atime}
+                        {source_hint}&nbsp;&nbsp;&nbsp;&nbsp; {speed_str}{logger.format_duration(total_ms)} &nbsp;&nbsp;&nbsp;&nbsp; {atime}
                         </div>
                     """
                     rendered_html = render_markdown_html(partial_text)
