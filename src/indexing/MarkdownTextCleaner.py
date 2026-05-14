@@ -1,6 +1,8 @@
 import re
 from pathlib import Path
 
+LIST_RE = re.compile(r"^(\s*(?:\*|-|\+|\d+[.)])\s+)(.*)")
+
 
 class MarkdownTextCleaner:
     """
@@ -13,8 +15,55 @@ class MarkdownTextCleaner:
     - collapse excessive horizontal rules
     """
 
+    @classmethod
+    def clean(cls, text: str) -> str:
+        text = cls.normalize_md(text)
+        text = cls.normalize_list_spacing(text)
+        return text
+
+    @classmethod
+    def normalize_list_spacing(cls, text: str) -> str:
+        lines = text.splitlines()
+
+        new_lines = []
+
+        in_code_block = False
+
+        for line in lines:
+            stripped = line.strip()
+
+            #
+            # fenced code block toggle
+            #
+            if stripped.startswith("```") or stripped.startswith("~~~"):
+                in_code_block = not in_code_block
+                new_lines.append(line)
+                continue
+
+            #
+            # markdown list item
+            #
+            m = LIST_RE.match(line)
+
+            if not in_code_block and m:
+                #
+                # previous line exists and is not blank
+                #
+                if new_lines and new_lines[-1].strip():
+                    #
+                    # previous line is not list item
+                    #
+                    prev_is_list = LIST_RE.match(new_lines[-1])
+
+                    if not prev_is_list:
+                        new_lines.append("")
+
+            new_lines.append(line)
+
+        return "\n".join(new_lines)
+
     @staticmethod
-    def clean(text: str) -> str:
+    def normalize_md(text: str) -> str:
         if not text:
             return ""
 
@@ -58,9 +107,7 @@ class MarkdownTextCleaner:
         debug: bool = False,
     ):
         root = Path(root_dir)
-
         md_files = list(root.rglob("*.md"))
-
         changed_count = 0
 
         for md_file in md_files:
