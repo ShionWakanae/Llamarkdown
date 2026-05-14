@@ -14,6 +14,8 @@ from utils.cuda import check_cuda
 from indexing.VisionClient import VisionClient
 from indexing.ImageOCREnhancer import ImageOCREnhancer
 from indexing.MarkdownTextCleaner import MarkdownTextCleaner
+import shutil
+import traceback
 
 ref_md_path = (Path(settings.app_doc_path) / REF_MD_DIR).resolve()
 check_cuda(settings)
@@ -107,9 +109,9 @@ if __name__ == "__main__":
     debug_mode = args.debug
 
     log(
-        f"Start with APP_DOC_PATH:`{doc_path}`{' in debug mode...' if debug_mode else '...'}"
+        f"Start with $APP_DOC_PATH: [{doc_path}]{' in debug mode...' if debug_mode else '...'}"
     )
-
+    chroma_db_path = "./storage/chroma_db"
     # clean markdown files
     MarkdownTextCleaner.clean_markdown_files(doc_path, log_func=log, debug=debug_mode)
 
@@ -126,46 +128,52 @@ if __name__ == "__main__":
             debug=debug_mode,
         )
         enhancer.process_directory(doc_path)
+    else:
+        log("[OCR+] Skip image enhancement")
+
+    try:
+        store_path = Path(chroma_db_path)
+        if store_path.exists():
+            shutil.rmtree(chroma_db_path)
+
         # 初始化 Chroma（持久化目录）
-        chroma_client = chromadb.PersistentClient(path="./storage/chroma_db")
+        chroma_client = chromadb.PersistentClient(path=chroma_db_path)
         # collection（类似表）
         chroma_collection = chroma_client.get_or_create_collection(
             "docs", metadata={"hnsw:space": "cosine"}
         )
-    else:
-        log("[OCR+] Skip image enhancement")
+        # 包装成 LlamaIndex 的 vector store
+        vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+        # 替换 storage_context
+        storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-    # 包装成 LlamaIndex 的 vector store
-    vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
-    # 替换 storage_context
-    storage_context = StorageContext.from_defaults(vector_store=vector_store)
+        log("[VECTOR] Building...")
+        builder = IndexBuilder()
+        final_nodes = builder.build_nodes(doc_path, debug_mode)
+        for node in final_nodes:
+            meta = node.metadata
+            if "merged_headers" in meta and isinstance(meta["merged_headers"], list):
+                meta["merged_headers"] = " + ".join(meta["merged_headers"])
 
-    log("[VECTOR] Building...")
-    builder = IndexBuilder()
-    final_nodes = builder.build_nodes(doc_path, debug_mode)
-    for node in final_nodes:
-        meta = node.metadata
-        if "merged_headers" in meta and isinstance(meta["merged_headers"], list):
-            meta["merged_headers"] = " > ".join(meta["merged_headers"])
+        # debug part
+        if debug_mode:
+            Show_debug_info_and_exit(final_nodes)
 
-    # debug part
-    if debug_mode:
-        Show_debug_info_and_exit(final_nodes)
-
-    # 建索引
-    log("[VECTOR] Indexing...")
-
-    index_embed_model = HuggingFaceEmbedding(
-        model_name=settings.embedding_model,
-        device=settings.embedding_device_index,
-        embed_batch_size=8,
-    )
-
-    index = VectorStoreIndex(
-        nodes=final_nodes,
-        storage_context=storage_context,
-        show_progress=True,
-        embed_model=index_embed_model,
-    )
+        # 建索引
+        log("[VECTOR] Indexing...")
+        index_embed_model = HuggingFaceEmbedding(
+            model_name=settings.embedding_model,
+            device=settings.embedding_device_index,
+            embed_batch_size=8,
+        )
+        index = VectorStoreIndex(
+            nodes=final_nodes,
+            storage_context=storage_context,
+            show_progress=True,
+            embed_model=index_embed_model,
+        )
+    except Exception as e:
+        log(f"Error index Chroma DB: {e}")
+        print(traceback.format_exc())
 
     log("All done ✅")

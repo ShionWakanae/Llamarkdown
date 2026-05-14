@@ -7,6 +7,7 @@ from PIL import UnidentifiedImageError
 from collections import Counter
 from utils.logger import logger
 from rich import print
+import builtins
 
 log = logger.log
 not_ocrable = "该图包含技术相关内容。"
@@ -195,8 +196,8 @@ class ImageOCREnhancer:
             except Exception as e:
                 log(f"\n[OCR+] ERROR: {md_file} -> {e}")
                 print(traceback.format_exc())
-        print()
         if self.debug:
+            print()
             print("=" * 60)
             print("OCR SUMMARY")
             print("=" * 60)
@@ -205,8 +206,18 @@ class ImageOCREnhancer:
             print("=" * 60)
             print()
         else:
+            builtins.print(
+                "\r                                               ",
+                end="",
+                flush=True,
+            )
+            builtins.print(
+                "\r",
+                end="",
+                flush=True,
+            )
             log(
-                f"[OCR+] processed {self.stats['md_files']} files, {self.stats['images_total']} images, need OCR {self.stats['images_meaningful'] - self.stats['skip_existing']} images, {self.stats['ocr_generated_success']} [green]OK[/], {self.stats['ocr_generated_failed']} [bold red]failed[/]."
+                f"[OCR+] processed {self.stats['md_files']} files {self.stats['images_total']} images, need OCR {self.stats['images_meaningful'] - self.stats['skip_existing']} and {self.stats['ocr_generated_success']} [green]OK[/] {self.stats['ocr_generated_failed']} [bold red]failed[/]."
             )
 
     def process_markdown_file(
@@ -233,8 +244,8 @@ class ImageOCREnhancer:
             # image line
             self.stats["images_total"] += 1
             if not self.debug:
-                print(
-                    f"\r..........................({self.stats['images_total']})",
+                builtins.print(
+                    f"\r..........................({self.stats['images_total']})...",
                     end="",
                     flush=True,
                 )
