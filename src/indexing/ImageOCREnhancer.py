@@ -4,6 +4,11 @@ import traceback
 from pathlib import Path
 from PIL import Image
 from PIL import UnidentifiedImageError
+from utils.logger import logger
+from rich import print
+
+log = logger.log
+not_ocrable = "该图包含技术相关内容。"
 
 
 class ImageOCREnhancer:
@@ -150,8 +155,8 @@ class ImageOCREnhancer:
         # logging
         #
         if self.debug:
-            print(
-                "[ImageOCREnhancer] "
+            log(
+                "[OCR+] "
                 f"renamed image:\n"
                 f"  from: {original_path.name}\n"
                 f"  to:   {new_name}"
@@ -173,12 +178,12 @@ class ImageOCREnhancer:
         md_files = list(root.rglob("*.md"))
         for md_file in md_files:
             if self.debug:
-                print(f"[ImageOCREnhancer] processing: {md_file}")
+                log(f"[OCR+] processing: {md_file}")
             try:
                 self.process_markdown_file(md_file)
 
             except Exception as e:
-                print(f"\n[ImageOCREnhancer] ERROR: {md_file} -> {e}")
+                log(f"\n[OCR+] ERROR: {md_file} -> {e}")
                 print(traceback.format_exc())
         print()
 
@@ -211,7 +216,7 @@ class ImageOCREnhancer:
                 print(".", end="", flush=True)
             # image file is missing
             if not image_path.exists():
-                print(f"[ImageOCREnhancer] missing image: {image_path}")
+                log(f"[OCR+] missing image: {image_path.name}")
                 i += 1
                 continue
 
@@ -237,7 +242,7 @@ class ImageOCREnhancer:
             #
             if not self._is_meaningful_image(image_path):
                 if self.debug:
-                    print(f"[ImageOCREnhancer] skip meaningless image: {image_path}")
+                    log(f"[OCR+] skip meaningless image: {image_path.name}")
 
                 i += 1
                 continue
@@ -266,14 +271,14 @@ class ImageOCREnhancer:
 
                 existing_id = metadata.get("id")
                 if self.debug:
-                    print(f"[ImageOCREnhancer] existing id: {existing_id}")
+                    log(f"[OCR+] existing id: {existing_id}")
                 #
                 # case 1:
                 # old OCR format
                 #
                 if not existing_id:
                     if self.debug:
-                        print("[ImageOCREnhancer] upgrade old OCR block")
+                        log("[OCR+] upgrade old OCR block")
 
                     #
                     # preserve old caption
@@ -319,7 +324,7 @@ class ImageOCREnhancer:
                 # image changed
                 #
                 if self.debug:
-                    print("[ImageOCREnhancer] image changed")
+                    log("[OCR+] image changed")
 
                 #
                 # skip old block
@@ -360,7 +365,7 @@ class ImageOCREnhancer:
                 encoding="utf-8",
             )
             if self.debug:
-                print(f"[ImageOCREnhancer] updated: {md_path}")
+                log(f"[OCR+] updated: {md_path}")
 
     #
     # OCR block
@@ -371,12 +376,16 @@ class ImageOCREnhancer:
         image_id: str,
         caption: str,
     ):
+        if caption.strip() and caption != not_ocrable:
+            status = "ok"
+        else:
+            status = "failed"
 
         return [
             "*[Image OCR]*",
             f"id: {image_id}",
             f"model: {self.vision_model}",
-            "status: ok",
+            f"status: {status}",
             "*",
             "",
             caption.strip(),
@@ -482,7 +491,7 @@ class ImageOCREnhancer:
         #
         if image_id in self.caption_cache:
             if self.debug:
-                print("[ImageOCREnhancer] caption cache hit")
+                log("[OCR+] caption cache hit")
 
             return self.caption_cache[image_id]
 
@@ -490,7 +499,7 @@ class ImageOCREnhancer:
         # analyze
         #
         if self.debug:
-            print(f"[ImageOCREnhancer] analyzing: {image_path}")
+            log(f"[OCR+] analyzing: {image_path.name}")
 
         caption = self.vision_client.analyze_image(
             image_path=image_path,
@@ -498,12 +507,12 @@ class ImageOCREnhancer:
         )
 
         if not caption:
-            caption = "该图包含技术相关内容。"
+            caption = not_ocrable
             if self.debug:
-                print("识别失败!")
+                print("[bold red]识别失败![/bold red]")
         else:
             if self.debug:
-                print(f"识别成功: {caption[:30]}")
+                print(f"识别成功: {caption[:30]}...")
 
         self.caption_cache[image_id] = caption
 

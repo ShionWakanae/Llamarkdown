@@ -1,4 +1,5 @@
 import shutil
+from PIL import Image
 from pathlib import Path
 import traceback
 from rich import print
@@ -116,6 +117,15 @@ class DoclingDirectoryConverter:
                     image = element.image.pil_image
                     image_name = f"img_{image_index:06d}.png"
                     image_path = artifact_dir / image_name
+                    MAX_SIZE = (1536, 1536)
+                    image.thumbnail(
+                        MAX_SIZE,
+                        Image.Resampling.LANCZOS,
+                    )
+                    image = image.convert(
+                        "P",
+                        palette=Image.ADAPTIVE,
+                    )
                     image.save(
                         image_path,
                         compress_level=9,
