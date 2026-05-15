@@ -3,6 +3,8 @@ import traceback
 import warnings
 import copy
 import time
+import json
+from enum import Enum
 from rich import print
 from transformers.utils import logging
 from llama_index.core.base.llms.types import (
@@ -21,6 +23,8 @@ from rag.cache import answer_cache
 from utils.logger import logger
 from utils.settings import settings, rewrite_image_paths
 from utils.json_extractor import safe_extract_json_fields
+from utils.token_analyze import analyze_tokens
+
 
 log = logger.log
 
@@ -28,6 +32,12 @@ warnings.filterwarnings("ignore", message="pkg_resources is deprecated as an API
 import jieba  # noqa: E402
 
 logging.set_verbosity_error()
+
+
+class QueryMode(Enum):
+    NORMAL = "normal"
+    QUOTED = "quoted"
+    CONFIRM_RAG = "confirm_rag"
 
 
 class UsageCollector:
@@ -289,7 +299,13 @@ Windows平台对比Linux平台，用表格展示
             json_text = match.group(0)
             print(json_text)
             result = safe_extract_json_fields(json_text)
-            print(result)
+            print(
+                json.dumps(
+                    result,
+                    ensure_ascii=False,
+                    indent=4,
+                )
+            )
             return result
 
         except Exception as e:
@@ -341,6 +357,7 @@ class RagEngine:
         self._build_pipeline()
         self.navigator = QuestionNavigator()
         self.usage = UsageCollector()
+        self.need_cache = True
         log("[RAG] Ready")
 
     def _get_model_name(self, llm):
@@ -624,17 +641,21 @@ class RagEngine:
             top_n=settings.retrieval_rerank_top_n_max,
         )
 
-    def query(self, question, force_rag):
-        if not force_rag:
-            rewrite_start = time.perf_counter()
+    def query(
+        self,
+        question,
+        query_mode=QueryMode.NORMAL,
+    ):
+        self.need_cache = True
+        rewrite_start = time.perf_counter()
+        if query_mode == QueryMode.NORMAL or query_mode == QueryMode.CONFIRM_RAG:
             analysis = self.navigator.analyze_query(question, self)
-            rewrite_ms = round((time.perf_counter() - rewrite_start) * 1000, 2)
             question_type = analysis.get(
                 "question_type",
                 "RAG",
             )
             # print(question_type)
-            if not force_rag and question_type != "RAG":
+            if query_mode == QueryMode.NORMAL and question_type != "RAG":
                 if question_type == "CHAT":
                     ret = "您好，我是专职的企业知识库的智能助理，您可以直接提出问题。"
                 elif question_type == "INVALID":
@@ -663,27 +684,42 @@ class RagEngine:
             presentation_intent = analysis.get("presentation_intent", "")
             if not retrieval_query:
                 retrieval_query = question
+                self.need_cache = False
+            if not user_intent:
+                user_intent = "获取信息"
+                self.need_cache = False
+            if not presentation_intent:
+                presentation_intent = "introduction"
+                self.need_cache = False
+
             log(f"[Rewrite] 意图是: {user_intent} ({presentation_intent})")
             log(f"[Rewrite] 关键词: {retrieval_query}", False)
-            timing = rewrite_ms
 
-        else:
+        else:  # query_mode == QueryMode.QUOTED  # 强制查询,目前没有第四种模式
             retrieval_query = question
             user_intent = "获取信息"
-            presentation_intent = "介绍"
+            presentation_intent = "introduction"
             log(f"[Rewrite] 强制查: {user_intent} ({presentation_intent})")
             log(f"[Rewrite] 关键词: {retrieval_query}", False)
-            timing = 0
+            self.need_cache = False
+
+        if not self.need_cache:
+            tokens = analyze_tokens(retrieval_query)
+            self.need_cache = tokens["english_count"] == 1
+        timing = round((time.perf_counter() - rewrite_start) * 1000, 2)
 
         yield {
             "type": "trace",
             "stage": "识别",
-            "message": (
-                f"用户希望{user_intent}，我将查询 {retrieval_query} ({presentation_intent}) 的资料"
-            ),
+            "message": (f"用户希望{user_intent}"),
+            "timing": 0,
+        }
+        yield {
+            "type": "trace",
+            "stage": "识别",
+            "message": (f"我将查询 {retrieval_query}({presentation_intent})的资料"),
             "timing": timing,
         }
-
         self.last_retrieval_query = retrieval_query
         self.last_presentation_intent = presentation_intent
         self.last_user_intent = user_intent
@@ -709,7 +745,7 @@ class RagEngine:
             yield {
                 "type": "response",
                 "question_type": "RAG",
-                "is_cache": True,
+                "is_cached": True,
                 "stream": iter([best["answer"]]),
                 "source_nodes": [],
             }
@@ -878,7 +914,7 @@ class RagEngine:
 """
 
         # final generate
-        log(f"Answer starting, prompt len: {len(final_prompt)}")
+        log(f"Answer starting, input prompt len: {len(final_prompt)}")
         yield {
             "type": "trace",
             "stage": "回答",

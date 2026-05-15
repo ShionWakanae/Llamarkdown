@@ -4,6 +4,7 @@ from rag.engine import engine
 from rag.dict import dict_engine
 from rag.cache import answer_cache
 from utils.logger import logger
+from rag.engine import QueryMode
 
 log = logger.log
 
@@ -82,20 +83,25 @@ class RagService:
     def get_token_usage(self):
         return engine.usage.to_dict()
 
-    def stream_answer(self, question, force_rag=False):
+    def stream_answer(
+        self,
+        question,
+        query_mode=QueryMode.NORMAL,
+    ):
         total_start = time.perf_counter()
         log("[Service] Starting...", False)
         yield {
             "type": "trace",
             "stage": "开始",
-            "message": ("我正在检索信息，可能需要较长时间，请耐心等候"),
+            "message": ("我需要检索信息来回答用户的问题"),
             "timing": 0,
         }
         is_quoted = detect_quoted_query(question)
         if is_quoted:
             question = sanitize_query(question)
+            query_mode = QueryMode.QUOTED
             # logger.log(f"Sanitized question: {question}")
-        if not force_rag:
+        if query_mode == QueryMode.NORMAL or query_mode == QueryMode.QUOTED:
             dict_result = dict_engine.query(question)
             if dict_result:
                 md = dict_engine.format_markdown(dict_result["entries"])
@@ -140,9 +146,8 @@ class RagService:
 
         query_start = time.perf_counter()
         engine.usage.reset()
-        # response = engine.query(question, force_rag or is_quoted)
         response = None
-        for event in engine.query(question, force_rag or is_quoted):
+        for event in engine.query(question, query_mode):
             if event["type"] == "trace":
                 yield event
 
@@ -172,8 +177,8 @@ class RagService:
                         "retrieval": [],
                     }
                     return
-                is_cache = event.get(
-                    "is_cache",
+                is_cached = event.get(
+                    "is_cached",
                     False,
                 )
                 response = event
@@ -213,7 +218,7 @@ class RagService:
         # save semantic cache
         #
 
-        if final_answer and not is_cache:
+        if final_answer and (not is_cached) and engine.need_cache:
             try:
                 answer_cache.save(
                     retrieval_query=getattr(

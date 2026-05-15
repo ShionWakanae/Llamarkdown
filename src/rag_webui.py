@@ -21,6 +21,7 @@ from utils.settings import (
     ORI_PDF_DIR,
     version_num,
 )
+from rag.engine import QueryMode
 
 
 class FilteredStderr:
@@ -312,8 +313,7 @@ def main():
                 asyncio.create_task(
                     send_message(
                         question,
-                        force_rag=True,
-                        from_confirm=True,
+                        query_mode=QueryMode.CONFIRM_RAG,
                         client=client,
                     )
                 )
@@ -784,8 +784,7 @@ def main():
 
             async def send_message(
                 message=None,
-                force_rag=False,
-                from_confirm=False,
+                query_mode: QueryMode = QueryMode.NORMAL,
                 client=None,
             ):
                 partial_text = ""
@@ -821,7 +820,7 @@ def main():
                     # messages
                     qtime = f"🕐{datetime.datetime.now().strftime('%H:%M:%S')}"
                     with chat_scroll:
-                        if not from_confirm:
+                        if not query_mode == QueryMode.CONFIRM_RAG:
                             # 用户消息：右边
                             with ui.row().classes("w-full justify-end"):
                                 with ui.chat_message(
@@ -883,7 +882,7 @@ def main():
 
                     def worker():
                         try:
-                            for event in service.stream_answer(message, force_rag):
+                            for event in service.stream_answer(message, query_mode):
                                 queue.put(event)
                         finally:
                             queue.put(None)
@@ -1046,7 +1045,7 @@ def main():
                         "qtime": qtime,
                         "answer": rendered_html + footer,
                         "atime": atime,
-                        "confirm": from_confirm,
+                        "confirm": query_mode == QueryMode.CONFIRM_RAG,
                         "sources": [],
                     }
                     if should_show_sources:
