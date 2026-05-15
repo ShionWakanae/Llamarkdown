@@ -1,5 +1,4 @@
 import re
-import json
 import traceback
 import warnings
 import copy
@@ -18,8 +17,10 @@ import chromadb
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core import VectorStoreIndex
 from collections import defaultdict
+from rag.cache import answer_cache
 from utils.logger import logger
 from utils.settings import settings, rewrite_image_paths
+from utils.json_extractor import safe_extract_json_fields
 
 log = logger.log
 
@@ -205,7 +206,7 @@ retrieval_query 留空。
 格式：
 
 {{
-            "question_type": "RAG | CHAT | INVALID",
+    "question_type": "RAG | CHAT | INVALID",
     "retrieval_query": "...",
     "presentation_intent": "...",
     "user_intent": "..."
@@ -286,7 +287,9 @@ Windows平台对比Linux平台，用表格展示
                 raise ValueError("No JSON found")
 
             json_text = match.group(0)
-            result = json.loads(json_text)
+            print(json_text)
+            result = safe_extract_json_fields(json_text)
+            print(result)
             return result
 
         except Exception as e:
@@ -680,6 +683,40 @@ class RagEngine:
             ),
             "timing": timing,
         }
+
+        self.last_retrieval_query = retrieval_query
+        self.last_presentation_intent = presentation_intent
+        self.last_user_intent = user_intent
+
+        cache_hit = answer_cache.search(
+            retrieval_query=retrieval_query,
+            presentation_intent=presentation_intent,
+            user_intent=user_intent,
+        )
+
+        if cache_hit:
+            best = cache_hit["best"]
+            log(
+                f"[Cache] HIT score={best['score']:.4f}",
+                False,
+            )
+            yield {
+                "type": "trace",
+                "stage": "缓存",
+                "message": (f"命中语义缓存，相似度: `{best['score']:.4f}`"),
+                "timing": 0,
+            }
+            yield {
+                "type": "response",
+                "question_type": "RAG",
+                "is_cache": True,
+                "stream": iter([best["answer"]]),
+                "source_nodes": [],
+            }
+            return
+
+        else:
+            log(f"[Cache] {'no cache hit'}")
 
         # retrieve
         retrieve_start = time.perf_counter()

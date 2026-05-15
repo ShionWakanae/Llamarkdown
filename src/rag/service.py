@@ -2,6 +2,7 @@ import time
 import re
 from rag.engine import engine
 from rag.dict import dict_engine
+from rag.cache import answer_cache
 from utils.logger import logger
 
 log = logger.log
@@ -171,6 +172,10 @@ class RagService:
                         "retrieval": [],
                     }
                     return
+                is_cache = event.get(
+                    "is_cache",
+                    False,
+                )
                 response = event
                 break
         query_ms = round(
@@ -182,21 +187,63 @@ class RagService:
             return
         # stream answer
         got_answer = False
+        full_answer = []
         llm_start = time.perf_counter()
         for chunk in response["stream"]:
-            token = getattr(
-                chunk,
-                "delta",
-                "",
-            )
+            if isinstance(chunk, str):
+                token = chunk
+            else:
+                token = getattr(
+                    chunk,
+                    "delta",
+                    "",
+                )
 
             if token:
                 got_answer = True
-
+                full_answer.append(token)
                 yield {
                     "type": "token",
                     "text": token,
                 }
+
+        final_answer = "".join(full_answer).strip()
+
+        #
+        # save semantic cache
+        #
+
+        if final_answer and not is_cache:
+            try:
+                answer_cache.save(
+                    retrieval_query=getattr(
+                        engine,
+                        "last_retrieval_query",
+                        question,
+                    ),
+                    presentation_intent=getattr(
+                        engine,
+                        "last_presentation_intent",
+                        "",
+                    ),
+                    user_intent=getattr(
+                        engine,
+                        "last_user_intent",
+                        "",
+                    ),
+                    answer=final_answer,
+                )
+
+                log(
+                    "[Cache] SAVED",
+                    False,
+                )
+
+            except Exception as e:
+                log(
+                    f"[Cache] SAVE FAILED: {e}",
+                    False,
+                )
 
         llm_ms = round(
             (time.perf_counter() - llm_start) * 1000,
