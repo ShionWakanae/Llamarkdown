@@ -964,6 +964,7 @@ def main():
                         partial_text += accumulated
 
                     log("Answer completed")
+                    log("----------------")
                     log(
                         f"Query: {timing.get('query_ms', 0)} ms, LLM: {timing.get('llm_ms', 0)} ms, Total: {timing.get('total_ms', 0)} ms",
                         False,
