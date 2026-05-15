@@ -2,28 +2,35 @@ def build_reference_files(source_nodes):
 
     refs = []
     files = {}
-
     # seen = set()
-
     for node in source_nodes:
-        file_name = node.metadata.get(
+        # cache hit:
+        # dict
+        if isinstance(node, dict):
+            metadata = node
+        # normal rag:
+        # NodeWithScore
+        else:
+            metadata = node.metadata or {}
+
+        file_name = metadata.get(
             "file_name",
             "unknown",
         )
 
-        file_path = node.metadata.get(
+        file_path = metadata.get(
             "file_path",
             "",
         )
 
-        line_start = node.metadata.get(
+        line_start = metadata.get(
             "line_start",
-            "-1",
+            -1,
         )
 
-        line_end = node.metadata.get(
+        line_end = metadata.get(
             "line_end",
-            "-1",
+            -1,
         )
 
         # if file_path in seen:

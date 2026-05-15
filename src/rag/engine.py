@@ -747,7 +747,10 @@ class RagEngine:
                 "question_type": "RAG",
                 "is_cached": True,
                 "stream": iter([best["answer"]]),
-                "source_nodes": [],
+                "source_nodes": best.get(
+                    "source_nodes",
+                    [],
+                ),
             }
             return
 

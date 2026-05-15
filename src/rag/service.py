@@ -237,6 +237,10 @@ class RagService:
                         "",
                     ),
                     answer=final_answer,
+                    source_nodes=response.get(
+                        "source_nodes",
+                        [],
+                    ),
                 )
 
                 log(
@@ -273,13 +277,18 @@ class RagService:
             source_nodes,
             start=1,
         ):
-            metadata = node.metadata or {}
+            if isinstance(node, dict):
+                metadata = node
+                score = node.get("score", 0)
+            else:
+                metadata = node.metadata or {}
+                score = node.score or 0
 
             retrieval.append(
                 {
                     "rank": idx,
                     "score": round(
-                        node.score or 0,
+                        score or 0,
                         4,
                     ),
                     "file_name": metadata.get(

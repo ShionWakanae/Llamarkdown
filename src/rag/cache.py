@@ -14,6 +14,42 @@ from utils.settings import settings
 CACHE_DB_PATH = "./storage/cache/cache.db"
 
 
+def serialize_source_nodes(nodes):
+    result = []
+
+    for node in nodes:
+        metadata = node.metadata or {}
+
+        result.append(
+            {
+                "score": round(
+                    node.score or 0,
+                    4,
+                ),
+                "file_name": metadata.get(
+                    "file_name",
+                    "",
+                ),
+                "file_path": metadata.get(
+                    "file_path",
+                    "",
+                ),
+                "header_path": metadata.get(
+                    "header_path",
+                    "",
+                ),
+                "line_start": metadata.get(
+                    "line_start",
+                ),
+                "line_end": metadata.get(
+                    "line_end",
+                ),
+            }
+        )
+
+    return result
+
+
 class AnswerCache:
     def __init__(self):
         Path("./storage/cache").mkdir(
@@ -37,6 +73,8 @@ class AnswerCache:
                 user_intent TEXT,
 
                 answer TEXT,
+
+                source_nodes TEXT,
 
                 embedding TEXT,
 
@@ -152,6 +190,7 @@ class AnswerCache:
             SELECT
                 id,
                 answer,
+                source_nodes,
                 embedding,
                 retrieval_query,
                 presentation_intent,
@@ -170,6 +209,7 @@ class AnswerCache:
             (
                 cache_id,
                 answer,
+                serialized_nodes,
                 embedding_json,
                 cached_query,
                 cached_presentation,
@@ -181,7 +221,13 @@ class AnswerCache:
                     json.loads(embedding_json),
                     dtype=np.float32,
                 )
+                source_nodes = []
 
+                if serialized_nodes:
+                    try:
+                        source_nodes = json.loads(serialized_nodes)
+                    except Exception:
+                        pass
                 score = self.cosine_similarity(
                     query_emb,
                     emb,
@@ -192,6 +238,7 @@ class AnswerCache:
                         "id": cache_id,
                         "score": score,
                         "answer": answer,
+                        "source_nodes": source_nodes,
                         "retrieval_query": cached_query,
                         "presentation_intent": cached_presentation,
                         "user_intent": cached_user_intent,
@@ -229,9 +276,13 @@ class AnswerCache:
         presentation_intent: str,
         user_intent: str,
         answer: str,
+        source_nodes: list = None,
     ):
         answer = (answer or "").strip()
-
+        serialized_nodes = json.dumps(
+            serialize_source_nodes(source_nodes),
+            ensure_ascii=False,
+        )
         #
         # skip low quality
         #
@@ -278,11 +329,12 @@ class AnswerCache:
                 presentation_intent,
                 user_intent,
                 answer,
+                source_nodes,
                 embedding,
                 knowledge_hash,
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 cache_key,
@@ -290,6 +342,7 @@ class AnswerCache:
                 presentation_intent,
                 user_intent,
                 answer,
+                serialized_nodes,
                 embedding_json,
                 knowledge_hash,
                 int(time.time()),
