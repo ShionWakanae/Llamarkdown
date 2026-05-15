@@ -324,6 +324,31 @@ def main():
             ui.button("否", on_click=on_no).props("flat dense size=sm icon='close'")
             ui.button("是", on_click=on_yes).props("dense size=sm icon='check'")
 
+    def show_inline_force_rag_confirm(question, container, client):
+        container.clear()
+        with container:
+            ui.label(f"❓需要重新强制检索'{question}'吗？？").classes(
+                "text-sm text-gray-400"
+            )
+
+            def on_yes():
+                container.clear()
+                container.delete()
+                asyncio.create_task(
+                    send_message(
+                        f"'{question}'",
+                        query_mode=QueryMode.QUOTED,
+                        client=client,
+                    )
+                )
+
+            def on_no():
+                container.clear()
+                container.delete()
+
+            ui.button("否", on_click=on_no).props("flat dense size=sm icon='close'")
+            ui.button("是", on_click=on_yes).props("dense size=sm icon='check'")
+
     def show_file_preview(name, path, hits):
         content = read_file_by_path(path)
         highlighted_md = build_highlighted_markdown(
@@ -955,6 +980,12 @@ def main():
                             got_answer = event["got_answer"]
                             if event.get("need_rag_confirm"):
                                 show_inline_rag_confirm(
+                                    event.get("original_question"),
+                                    action_container,
+                                    client,
+                                )
+                            if event.get("need_force_rag_confirm"):
+                                show_inline_force_rag_confirm(
                                     event.get("original_question"),
                                     action_container,
                                     client,

@@ -663,6 +663,7 @@ class RagEngine:
                     "message": ret,
                     "stream": None,
                     "source_nodes": [],
+                    "original_question": question,
                 }
                 return
 

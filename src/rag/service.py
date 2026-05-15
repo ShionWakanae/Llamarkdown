@@ -165,6 +165,17 @@ class RagService:
                             "无法处理该问题。",
                         ),
                     }
+                    if question_type == "INVALID":
+                        yield {
+                            "type": "status",
+                            "got_answer": True,
+                            "need_force_rag_confirm": True,
+                            "original_question": event.get(
+                                "original_question",
+                                question,
+                            ),
+                            "source": "invalid",
+                        }
                     total_ms = round(
                         (time.perf_counter() - total_start) * 1000,
                         2,
