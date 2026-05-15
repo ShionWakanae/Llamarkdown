@@ -3,7 +3,6 @@ import traceback
 import warnings
 import copy
 import time
-import json
 from enum import Enum
 from rich import print
 from transformers.utils import logging
@@ -297,15 +296,7 @@ Windows平台对比Linux平台，用表格展示
                 raise ValueError("No JSON found")
 
             json_text = match.group(0)
-            print(json_text)
             result = safe_extract_json_fields(json_text)
-            print(
-                json.dumps(
-                    result,
-                    ensure_ascii=False,
-                    indent=4,
-                )
-            )
             return result
 
         except Exception as e:
@@ -732,10 +723,7 @@ class RagEngine:
 
         if cache_hit:
             best = cache_hit["best"]
-            log(
-                f"[Cache] HIT score={best['score']:.4f}",
-                False,
-            )
+            log(f"[Cache] Hit score={best['score']:.4f}")
             yield {
                 "type": "trace",
                 "stage": "缓存",

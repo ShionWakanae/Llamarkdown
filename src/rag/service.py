@@ -89,7 +89,7 @@ class RagService:
         query_mode=QueryMode.NORMAL,
     ):
         total_start = time.perf_counter()
-        log("[Service] Starting...", False)
+        log("[Service] Starting...")
         yield {
             "type": "trace",
             "stage": "开始",
@@ -244,13 +244,13 @@ class RagService:
                 )
 
                 log(
-                    "[Cache] SAVED",
+                    "[Cache] Saved",
                     False,
                 )
 
             except Exception as e:
                 log(
-                    f"[Cache] SAVE FAILED: {e}",
+                    f"[Cache] Save failed: {e}",
                     False,
                 )
 

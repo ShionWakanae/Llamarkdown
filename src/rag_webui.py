@@ -808,6 +808,7 @@ def main():
                     input_box.disable()
                     switch_debug.set_value(False)
                     switch_debug.set_enabled(False)
+                    print("=" * 60)
                     log(f"Question: {message}", False)
                     # reset status
                     debug_panel.content = """

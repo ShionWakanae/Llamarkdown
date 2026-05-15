@@ -4,9 +4,12 @@ import re
 
 def safe_extract_json_fields(text: str):
     # first try strict json
+    bad_json = False
     try:
         return json.loads(text)
     except Exception:
+        bad_json = True
+        print(text)
         pass
 
     # fallback regex extract
@@ -40,4 +43,6 @@ def safe_extract_json_fields(text: str):
             value = value.rstrip('"')
             result[field] = value
 
+    if bad_json:
+        print(json.dumps(result, ensure_ascii=False, indent=4))
     return result
