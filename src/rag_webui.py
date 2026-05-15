@@ -21,7 +21,6 @@ from utils.settings import (
     ORI_PDF_DIR,
     version_num,
 )
-from rag.engine import QueryMode
 
 
 class FilteredStderr:
@@ -42,7 +41,7 @@ class FilteredStderr:
 
 
 sys.stderr = FilteredStderr(sys.stderr)
-
+from rag.engine import QueryMode  # noqa: E402
 from rag.service import service  # noqa: E402
 
 log = logger.log
