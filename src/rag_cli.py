@@ -47,7 +47,7 @@ args = parser.parse_args()
 quest_str = args.question
 force_rag = args.ForceRAG
 
-log(f"Question: [bold bright_yellow]{quest_str}[/]")
+log(f"Question: [bold bright_yellow]{quest_str}[/]", False)
 
 debug_data = None
 dct_answer = False
