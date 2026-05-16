@@ -186,7 +186,7 @@ class QuestionNavigator:
 请分析用户问题。
 
 目标：
-1. 提取真正用于知识检索的内容。
+1. 提取真正用于知识检索的关键词，多个关键词用空格分割。
 2. 剥离输出格式要求。
 3. 剥离语气词。
 4. 保留用户真实业务问题。
@@ -240,7 +240,7 @@ Windows平台对比Linux平台，用表格展示
 返回：
 {{
     "question_type": "RAG",
-    "retrieval_query": "HSS数据解析流程",
+    "retrieval_query": "HSS 数据解析 流程",
     "presentation_intent": "detailed",
     "user_intent": "介绍数据解析流程"
 }}
@@ -250,10 +250,10 @@ Windows平台对比Linux平台，用表格展示
 
 输出:
 {{
-            "question_type": "CHAT",
-  "retrieval_query": "",
-  "presentation_intent": "",
-  "user_intent": "打招呼"
+    "question_type": "CHAT",
+    "retrieval_query": "",
+    "presentation_intent": "",
+    "user_intent": "打招呼"
 }}
 
 用户:
@@ -261,7 +261,7 @@ Windows平台对比Linux平台，用表格展示
 
 输出:
 {{
-            "question_type": "INVALID",
+    "question_type": "INVALID",
     ...
 }}
 
@@ -681,8 +681,7 @@ class RagEngine:
                 user_intent = "获取信息"
                 self.need_cache = False
             if not presentation_intent:
-                presentation_intent = "introduction"
-                self.need_cache = False
+                presentation_intent = "intro"
 
             log(f"[Rewrite] 意图是: {user_intent} ({presentation_intent})")
             log(f"[Rewrite] 关键词: {retrieval_query}", False)
@@ -690,7 +689,7 @@ class RagEngine:
         else:  # query_mode == QueryMode.QUOTED  # 强制查询,目前没有第四种模式
             retrieval_query = question
             user_intent = "获取信息"
-            presentation_intent = "introduction"
+            presentation_intent = "intro"
             log(f"[Rewrite] 强制查: {user_intent} ({presentation_intent})")
             log(f"[Rewrite] 关键词: {retrieval_query}", False)
             self.need_cache = False
