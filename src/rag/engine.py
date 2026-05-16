@@ -639,13 +639,13 @@ class RagEngine:
     ):
         self.need_cache = True
         rewrite_start = time.perf_counter()
+        # print(query_mode)
         if query_mode == QueryMode.NORMAL or query_mode == QueryMode.CONFIRM_RAG:
             analysis = self.navigator.analyze_query(question, self)
             question_type = analysis.get(
                 "question_type",
                 "RAG",
             )
-            # print(question_type)
             if query_mode == QueryMode.NORMAL and question_type != "RAG":
                 if question_type == "CHAT":
                     ret = "您好，我是专职的企业知识库的智能助理，您可以直接提出问题。"
@@ -697,7 +697,9 @@ class RagEngine:
 
         if not self.need_cache:
             tokens = analyze_tokens(retrieval_query)
-            self.need_cache = tokens["english_count"] == 1
+            self.need_cache = (
+                tokens["english_count"] == 1 and tokens["chinese_count"] == 0
+            )
         timing = round((time.perf_counter() - rewrite_start) * 1000, 2)
 
         yield {

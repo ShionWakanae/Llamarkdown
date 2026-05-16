@@ -223,45 +223,6 @@ class RagService:
                     "text": token,
                 }
 
-        final_answer = "".join(full_answer).strip()
-
-        #
-        # save semantic cache
-        #
-
-        if final_answer and (not is_cached) and engine.need_cache:
-            try:
-                answer_cache.save(
-                    retrieval_query=getattr(
-                        engine,
-                        "last_retrieval_query",
-                        question,
-                    ),
-                    presentation_intent=getattr(
-                        engine,
-                        "last_presentation_intent",
-                        "",
-                    ),
-                    user_intent=getattr(
-                        engine,
-                        "last_user_intent",
-                        "",
-                    ),
-                    answer=final_answer,
-                    source_nodes=response.get(
-                        "source_nodes",
-                        [],
-                    ),
-                )
-
-                log("[Cache] Saved")
-
-            except Exception as e:
-                log(
-                    f"[Cache] Save failed: {e}",
-                    False,
-                )
-
         llm_ms = round(
             (time.perf_counter() - llm_start) * 1000,
             2,
@@ -335,15 +296,46 @@ class RagService:
             "retrieval": retrieval,
         }
 
-        #
         # final status
-        #
-
         yield {
             "type": "status",
             "got_answer": got_answer,
             "source": "llm",
         }
+
+        final_answer = "".join(full_answer).strip()
+        # save semantic cache
+        if final_answer and (not is_cached) and engine.need_cache:
+            try:
+                answer_cache.save(
+                    retrieval_query=getattr(
+                        engine,
+                        "last_retrieval_query",
+                        question,
+                    ),
+                    presentation_intent=getattr(
+                        engine,
+                        "last_presentation_intent",
+                        "",
+                    ),
+                    user_intent=getattr(
+                        engine,
+                        "last_user_intent",
+                        "",
+                    ),
+                    answer=final_answer,
+                    source_nodes=response.get(
+                        "source_nodes",
+                        [],
+                    ),
+                )
+                log("[Cache] Saved")
+
+            except Exception as e:
+                log(
+                    f"[Cache] Save failed: {e}",
+                    False,
+                )
 
 
 service = RagService()

@@ -27,6 +27,7 @@ class FilteredStderr:
 
 
 sys.stderr = FilteredStderr(sys.stderr)
+from rag.engine import QueryMode  # noqa: E402
 from rag.service import service  # noqa: E402
 
 log = logger.log
@@ -46,6 +47,10 @@ parser.add_argument(
 args = parser.parse_args()
 quest_str = args.question
 force_rag = args.ForceRAG
+if force_rag:
+    query_mode = QueryMode.QUOTED
+else:
+    query_mode = QueryMode.NORMAL
 
 log(f"Question: [bold bright_yellow]{quest_str}[/]", False)
 
@@ -59,7 +64,7 @@ with Live(Text("....", style="yellow"), refresh_per_second=2) as live:
     first = True
     source_nodes = []
     accumulated = ""
-    for event in service.stream_answer(quest_str, force_rag):
+    for event in service.stream_answer(quest_str, QueryMode.NORMAL):
         if event["type"] == "token":
             chunk = event["text"]
             if chunk:
@@ -98,7 +103,11 @@ if source_nodes:
     j = 0
     for i, node in enumerate(source_nodes):
         # print(node.metadata)
-        file_name = node.metadata.get("file_name")
+        if isinstance(node, dict):
+            metadata = node
+        else:
+            metadata = node.metadata or {}
+        file_name = metadata.get("file_name")
         if file_name and (file_name not in all_files):
             all_files.append(file_name)
             j = j + 1
@@ -172,16 +181,24 @@ if debug_data:
             return ordered
 
         for node in source_nodes:
+            if isinstance(node, dict):
+                metadata = node
+                score = node.get("score", 0)
+                answer = "来自缓存"
+            else:
+                metadata = node.metadata or {}
+                score = node.score or 0
+                answer = node.text
             print(
                 ">>>-------------------------------------------------------------------------------<<<"
             )
             print(
                 ">>> score:(",
-                node.score,
+                metadata.get("score", 0),
                 ") metadata：",
-                ordered_metadata(node.metadata),
+                ordered_metadata(metadata),
             )
-            builtins.print(node.text.replace("\n\n", "\n"))
+            builtins.print(answer.replace("\n\n", "\n"))
             print()
 
 log(
