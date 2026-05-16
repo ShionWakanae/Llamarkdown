@@ -254,10 +254,7 @@ class RagService:
                     ),
                 )
 
-                log(
-                    "[Cache] Saved",
-                    False,
-                )
+                log("[Cache] Saved")
 
             except Exception as e:
                 log(
