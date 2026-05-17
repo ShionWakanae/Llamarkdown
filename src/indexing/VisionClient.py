@@ -46,6 +46,15 @@ class VisionClient:
                     ],
                 }
             ],
+            extra_body={
+                "chat_template_kwargs": {
+                    "enable_thinking": False,
+                },
+                "enable_thinking": False,
+                "thinking": {
+                    "type": "disabled",
+                },
+            },
             max_tokens=4096,
             temperature=0.1,
             top_p=0.8,
