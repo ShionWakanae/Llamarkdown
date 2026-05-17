@@ -190,7 +190,7 @@ PS: Mobile and tablet users can also access the WebUI.
 ## Video Demonstrations
 Click to open videos on Bilibili:
 
-[![BM25 Video Demo](https://i2.hdslb.com/bfs/archive/5bf16a799cc21268d626462a89255220daf10ef4.jpg@308w_174h)](https://www.bilibili.com/video/BV1rb9zB5EAD/) [![Index and RAG Demo](https://i2.hdslb.com/bfs/archive/728ece5712492028faf11833f9fada09f2bf645a.jpg@308w_174h)](https://www.bilibili.com/video/BV1po9yBhEFH/)  
+[![WebUI](https://i2.hdslb.com/bfs/archive/4a2a4831b8936c90a563f12f310e6413998f3086.jpg@308w_174h)](https://www.bilibili.com/video/BV1mk5i6nEsQ) [![Mobile Phone](https://i2.hdslb.com/bfs/archive/6cd583150cbc3fbcea9c4724d44c90fd525265a4.jpg@308w_174h)](https://www.bilibili.com/video/BV1s15i6EEQr)  
 
 More videos are continuously being uploaded. Please check the channel if needed.
 

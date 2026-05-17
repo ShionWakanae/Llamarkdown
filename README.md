@@ -180,7 +180,7 @@ PS: 手机平板也可访问。
 ## 视频演示
 点击打开B站视频：
 
-[![BM25视频演示](https://i2.hdslb.com/bfs/archive/5bf16a799cc21268d626462a89255220daf10ef4.jpg@308w_174h)](https://www.bilibili.com/video/BV1rb9zB5EAD/) [![Index和RAG演示](https://i2.hdslb.com/bfs/archive/728ece5712492028faf11833f9fada09f2bf645a.jpg@308w_174h)](https://www.bilibili.com/video/BV1po9yBhEFH/)  
+[![WebUI](https://i2.hdslb.com/bfs/archive/4a2a4831b8936c90a563f12f310e6413998f3086.jpg@308w_174h)](https://www.bilibili.com/video/BV1mk5i6nEsQ) [![Mobile Phone](https://i2.hdslb.com/bfs/archive/6cd583150cbc3fbcea9c4724d44c90fd525265a4.jpg@308w_174h)](https://www.bilibili.com/video/BV1s15i6EEQr)  
 
 还有更多的视频更新，有需要请站内自行查看。
 
