@@ -55,7 +55,7 @@ else:
 log(f"Question: [bold bright_yellow]{quest_str}[/]", False)
 
 debug_data = None
-dct_answer = False
+answer_source = ""
 spinner = AsyncSpinner()
 timing = {}
 with Live(Text("....", style="yellow"), refresh_per_second=2) as live:
@@ -86,7 +86,7 @@ with Live(Text("....", style="yellow"), refresh_per_second=2) as live:
             timing = debug_data
         # status
         elif event["type"] == "status":
-            dct_answer = event["source"] == "dict"
+            answer_source = event["source"]
     if accumulated:
         print(f"[bold bright_magenta]{accumulated}[/]", end="", flush=True)
     if first:
@@ -119,7 +119,7 @@ log(
     f"Query: {timing.get('query_ms', 0)} ms, LLM: {timing.get('llm_ms', 0)} ms, Total: {timing.get('total_ms', 0)} ms",
     False,
 )
-if not dct_answer:
+if answer_source != "dict":
     usage = service.get_token_usage()
     src = usage["rewrite"]["source"]
     model = usage["rewrite"]["model"]
@@ -127,13 +127,14 @@ if not dct_answer:
         f"Rewrite token in: {usage['rewrite']['prompt_tokens']}, out:{usage['rewrite']['completion_tokens']}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
         False,
     )
-    src = usage["answer"]["source"]
-    model = usage["answer"]["model"]
-    log(
-        f"Answers token in: {usage['answer']['prompt_tokens']}, out:{usage['answer']['completion_tokens']}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
-        False,
-    )
-    log(f"Total token usage: {usage['total']['total_tokens']}", False)
+    if answer_source == "llm":
+        src = usage["answer"]["source"]
+        model = usage["answer"]["model"]
+        log(
+            f"Answers token in: {usage['answer']['prompt_tokens']}, out:{usage['answer']['completion_tokens']}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
+            False,
+        )
+        log(f"Total token usage: {usage['total']['total_tokens']}", False)
 print()
 
 if debug_data:

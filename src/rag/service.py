@@ -147,6 +147,7 @@ class RagService:
         query_start = time.perf_counter()
         engine.usage.reset()
         response = None
+        is_cached = False
         for event in engine.query(question, query_mode):
             if event["type"] == "trace":
                 yield event
@@ -300,7 +301,7 @@ class RagService:
         yield {
             "type": "status",
             "got_answer": got_answer,
-            "source": "llm",
+            "source": "cache" if is_cached else "llm",
         }
 
         final_answer = "".join(full_answer).strip()

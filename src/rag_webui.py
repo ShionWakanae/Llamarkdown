@@ -898,7 +898,7 @@ def main():
                     source_nodes = []
                     event_source = "none"
                     got_answer = False
-                    dct_answer = False
+                    answer_source = ""
                     first_token = False
                     first_trace = False
                     timing = {}
@@ -976,7 +976,7 @@ def main():
                         # status
                         elif event["type"] == "status":
                             event_source = event["source"]
-                            dct_answer = event_source == "dict"
+                            answer_source = event_source
                             got_answer = event["got_answer"]
                             if event.get("need_rag_confirm"):
                                 show_inline_rag_confirm(
@@ -1000,7 +1000,7 @@ def main():
                         f"Query: {timing.get('query_ms', 0)} ms, LLM: {timing.get('llm_ms', 0)} ms, Total: {timing.get('total_ms', 0)} ms",
                         False,
                     )
-                    if not dct_answer:
+                    if answer_source != "dict":
                         usage = service.get_token_usage()
                         src = usage["rewrite"]["source"]
                         model = usage["rewrite"]["model"]
@@ -1008,16 +1008,17 @@ def main():
                             f"Rewrite token in: {usage['rewrite']['prompt_tokens']}, out:{usage['rewrite']['completion_tokens']}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
                             False,
                         )
-                        src = usage["answer"]["source"]
-                        model = usage["answer"]["model"]
-                        log(
-                            f"Answers token in: {usage['answer']['prompt_tokens']}, out:{usage['answer']['completion_tokens']}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
-                            False,
-                        )
-                        log(
-                            f"Total token usage: {usage['total']['total_tokens']}",
-                            False,
-                        )
+                        if answer_source == "llm":
+                            src = usage["answer"]["source"]
+                            model = usage["answer"]["model"]
+                            log(
+                                f"Answers token in: {usage['answer']['prompt_tokens']}, out:{usage['answer']['completion_tokens']}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
+                                False,
+                            )
+                            log(
+                                f"Total token usage: {usage['total']['total_tokens']}",
+                                False,
+                            )
                     print()
 
                     # fallback
