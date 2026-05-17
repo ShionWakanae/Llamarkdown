@@ -5,10 +5,13 @@
 [简体中文](README.md) | **English**
 
 ## What Is This Project About
-I am trying to learn and understand enterprise knowledge bases and RAG from scratch by developing applications based on LlamaIndex — just like this little cat.  
-The goal is to build a knowledge base QA system for telecom and mobile network enterprises, with high recall accuracy, fast response times, and the ability to trace back to the original source.
-Especially, it is based on security factors, and does not require internet access.
-![]()
+Like this little cat, I am learning and understanding enterprise knowledge bases and RAG from scratch.  
+The goal is to build a knowledge-base question answering system for telecommunications/mobile support network enterprises, with high retrieval accuracy, fast response speed, and traceability back to the original documents. All of this is intended to work locally without Internet access for security reasons.  
+
+The project is based on LlamaIndex, but as development progressed and specific problems needed to be solved, LlamaIndex components were gradually replaced with custom implementations.  
+
+At the same time, Docling was introduced as a dependency to support document conversion within the project.
+
 ![](res/cat_typing.gif)
 
 ## About LlamaIndex
