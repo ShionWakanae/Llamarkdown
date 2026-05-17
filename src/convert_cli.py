@@ -51,6 +51,7 @@ class DoclingDirectoryConverter:
                 failed += 1
                 log(f"[red]FAILED[/red]: {file_path}")
                 print(e)
+                print(traceback.format_exc())
 
         print()
         print("=" * 60)
