@@ -257,37 +257,17 @@ class RagService:
             retrieval.append(
                 {
                     "rank": idx,
-                    "score": round(
-                        score or 0,
-                        4,
-                    ),
-                    "file_name": metadata.get(
-                        "file_name",
-                        "unknown",
-                    ),
-                    "header_path": metadata.get(
-                        "header_path",
-                        "",
-                    ),
-                    "line_start": metadata.get(
-                        "line_start",
-                    ),
-                    "line_end": metadata.get(
-                        "line_end",
-                    ),
-                    "block_type": metadata.get(
-                        "block_type",
-                    ),
-                    "text_length": metadata.get(
-                        "text_length",
-                    ),
+                    "score": round(score or 0, 4),
+                    "file_name": metadata.get("file_name", "unknown"),
+                    "header_path": metadata.get("header_path", ""),
+                    "line_start": metadata.get("line_start"),
+                    "line_end": metadata.get("line_end"),
+                    "block_type": metadata.get("block_type"),
+                    "text_length": metadata.get("text_length"),
                 }
             )
 
-        total_ms = round(
-            (time.perf_counter() - total_start) * 1000,
-            2,
-        )
+        total_ms = round((time.perf_counter() - total_start) * 1000, 2)
 
         yield {
             "type": "debug",
@@ -330,6 +310,7 @@ class RagService:
                         [],
                     ),
                 )
+                print(flush=True)
                 log("[Cache] Saved")
 
             except Exception as e:

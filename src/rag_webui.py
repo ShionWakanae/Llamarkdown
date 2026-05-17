@@ -936,7 +936,7 @@ def main():
                                 if assistant_answer_spinner:
                                     assistant_answer_spinner.set_visibility(True)
                             accumulated += event["text"]
-                            if "\n" in accumulated:
+                            if "\n" in accumulated or len(accumulated) > 30:
                                 partial_text += accumulated
                                 accumulated = ""
                                 rendered_html = render_markdown_html(partial_text)

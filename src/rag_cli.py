@@ -75,7 +75,7 @@ with Live(Text("....", style="yellow"), refresh_per_second=2) as live:
                     first = False
                 accumulated += chunk
                 # 遇到句号、感叹号、问号或换行时输出
-                if "\n" in accumulated:
+                if "\n" in accumulated or len(accumulated) > 30:
                     print(f"[bold bright_magenta]{accumulated}[/]", end="", flush=True)
                     accumulated = ""
         elif event["type"] == "sources":
@@ -87,13 +87,19 @@ with Live(Text("....", style="yellow"), refresh_per_second=2) as live:
         # status
         elif event["type"] == "status":
             answer_source = event["source"]
+
+        if not first and event["type"] != "token":
+            if accumulated:
+                print(f"[bold bright_magenta]{accumulated}[/]", flush=True)
+                accumulated = ""
+
     if accumulated:
-        print(f"[bold bright_magenta]{accumulated}[/]", end="", flush=True)
+        print(f"[bold bright_magenta]{accumulated}[/]", flush=True)
+
     if first:
         spinner.stop()
         live.stop()
         print("[bold bright_magenta]对不起，我检索了资料，但还是不知道答案……[/]")
-
 print()
 print()
 if source_nodes:
