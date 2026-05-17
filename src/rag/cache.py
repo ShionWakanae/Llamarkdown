@@ -8,10 +8,7 @@ import numpy as np
 
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
-from utils.settings import settings
-
-
-CACHE_DB_PATH = "./storage/cache/cache.db"
+from utils.settings import settings, CACHE_DB_PATH
 
 
 def serialize_source_nodes(nodes):
@@ -52,7 +49,7 @@ def serialize_source_nodes(nodes):
 
 class AnswerCache:
     def __init__(self):
-        Path("./storage/cache").mkdir(
+        Path(CACHE_DB_PATH).parent.mkdir(
             parents=True,
             exist_ok=True,
         )

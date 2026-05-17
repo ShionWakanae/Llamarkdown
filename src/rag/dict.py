@@ -1,12 +1,13 @@
 import os
 import re
 from utils.logger import logger
+from utils.settings import DICT_PATH
 
 log = logger.log
 
 
 class DictEngine:
-    def __init__(self, dict_dir="./storage/dict"):
+    def __init__(self, dict_dir=DICT_PATH):
         self.dict_map = {}
         self._load_dicts(dict_dir)
         log("[DICT] Ready")
@@ -20,7 +21,6 @@ class DictEngine:
                 continue
 
             path = os.path.join(dict_dir, fname)
-
             with open(path, "r", encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
@@ -29,14 +29,11 @@ class DictEngine:
 
                     parts = line.split("\t")
                     term = parts[0].strip()
-
                     if not term:
                         continue
 
                     defs = [p.strip() for p in parts[1:] if p.strip()]
-
                     key = term.lower()
-
                     entry = {
                         "term": term,
                         "definitions": defs,

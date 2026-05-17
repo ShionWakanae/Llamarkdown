@@ -8,7 +8,7 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core import StorageContext
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from utils.logger import logger
-from utils.settings import settings, REF_MD_DIR
+from utils.settings import settings, REF_MD_DIR, CHROMA_DB_PATHs
 from pathlib import Path
 from utils.cuda import check_cuda
 from indexing.VisionClient import VisionClient
@@ -111,7 +111,6 @@ if __name__ == "__main__":
     log(
         f"Start with $APP_DOC_PATH: [{doc_path}]{' in debug mode...' if debug_mode else '...'}"
     )
-    chroma_db_path = "./storage/chroma_db"
     # clean markdown files
     MarkdownTextCleaner.clean_markdown_files(doc_path, log_func=log, debug=debug_mode)
 
@@ -132,12 +131,12 @@ if __name__ == "__main__":
         log("[OCR+] Skip image enhancement")
 
     try:
-        store_path = Path(chroma_db_path)
+        store_path = Path(CHROMA_DB_PATHs)
         if store_path.exists():
-            shutil.rmtree(chroma_db_path)
+            shutil.rmtree(CHROMA_DB_PATHs)
 
         # 初始化 Chroma（持久化目录）
-        chroma_client = chromadb.PersistentClient(path=chroma_db_path)
+        chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATHs)
         # collection（类似表）
         chroma_collection = chroma_client.get_or_create_collection(
             "docs", metadata={"hnsw:space": "cosine"}

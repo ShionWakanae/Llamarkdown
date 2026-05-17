@@ -20,7 +20,7 @@ from llama_index.core import VectorStoreIndex
 from collections import defaultdict
 from rag.cache import answer_cache
 from utils.logger import logger
-from utils.settings import settings, rewrite_image_paths
+from utils.settings import settings, rewrite_image_paths, CHROMA_DB_PATH
 from utils.json_extractor import safe_extract_json_fields
 from utils.token_analyze import analyze_tokens
 
@@ -560,7 +560,7 @@ class RagEngine:
 
     def _build_pipeline(self):
         log("[RAG] Loading storage...")
-        chroma_client = chromadb.PersistentClient(path="./storage/chroma_db")
+        chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
         chroma_collection = chroma_client.get_or_create_collection("docs")
         vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 

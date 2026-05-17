@@ -8,9 +8,14 @@ from llama_index.postprocessor.flag_embedding_reranker import (
 from pathlib import Path
 import re
 
-version_num = "0.2.2"
+version_num = "0.2.3"
+
 REF_MD_DIR = "ref_md"
 ORI_PDF_DIR = "ori_pdf"
+
+CACHE_DB_PATH = "./storage/cache/cache.db"
+CHROMA_DB_PATH = "./storage/chroma_db"
+DICT_PATH = "./storage/dict"
 
 
 def rewrite_image_paths(md_str: str, path: str) -> str:
