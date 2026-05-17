@@ -273,6 +273,7 @@ Windows平台对比Linux平台，用表格展示
 {question}
         """
 
+        text = None
         try:
             response = self.llm.complete(prompt)
             usage, source = engine.extract_or_estimate_usage(
@@ -344,7 +345,7 @@ Windows平台对比Linux平台，用表格展示
 
 class RagEngine:
     def __init__(self):
-        log("[RAG] Initializing...")
+        log(f"[RAG] Initializing...<{settings.llm_api_base}>")
         self._build_pipeline()
         self.navigator = QuestionNavigator()
         self.usage = UsageCollector()

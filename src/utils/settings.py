@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
-
-from llama_index.llms.openai_like import OpenAILike
+from utils.myLLM import MyLLM
 from llama_index.postprocessor.flag_embedding_reranker import (
     FlagEmbeddingReranker,
 )
@@ -99,34 +98,25 @@ class Settings:
 """.strip()
 
         # Initialize models
-        self.rag_llm = OpenAILike(
-            api_base=self.llm_api_base,
+        self.rag_llm = MyLLM(
+            base_url=self.llm_api_base,
             api_key=self.llm_api_key,
             model=self.llm_model,
-            is_chat_model=True,
-            streaming=True,
-            temperature=0.0,
-            repeat_penalty=1.1,
-            context_window=32000,
-            max_tokens=4096,
             system_prompt=self.rag_system_prompt,
+            temperature=0.0,
+            extra_body={
+                "repeat_penalty": 1.1,
+            },
+            max_tokens=5120,
         )
 
-        self.rewrite_llm = OpenAILike(
-            api_base=self.llm_api_base,
+        self.rewrite_llm = MyLLM(
+            base_url=self.llm_api_base,
             api_key=self.llm_api_key,
             model=self.llm_model_small,
-            is_chat_model=True,
-            streaming=False,
-            temperature=0.0,
             system_prompt=self.rewrite_system_prompt,
-            extra_body={
-                "chat_template_kwargs": {
-                    "enable_thinking": False,
-                },
-                "enable_thinking": False,
-                "thinking": {"type": "disabled"},
-            },
+            temperature=0.0,
+            max_tokens=200,
         )
 
         self.reranker = FlagEmbeddingReranker(
