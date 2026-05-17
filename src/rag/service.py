@@ -310,7 +310,6 @@ class RagService:
                         [],
                     ),
                 )
-                print(flush=True)
                 log("[Cache] Saved")
 
             except Exception as e:

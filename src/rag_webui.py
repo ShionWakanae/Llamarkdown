@@ -1051,7 +1051,9 @@ def main():
                     if event_source == "dict":
                         source_hint = "🔍"
                     elif event_source == "llm":
-                        source_hint = "📖"
+                        source_hint = f"📖{settings.llm_model}"
+                    elif event_source == "cache":
+                        source_hint = "📦"
 
                     atime = f"🕐{datetime.datetime.now().strftime('%H:%M:%S')}"
                     total_ms = timing.get("total_ms", 0)
@@ -1059,7 +1061,7 @@ def main():
                     footer = f"""
                         <br>
                         <div style="text-align:right; font-size:12px; color:#888888 !important;">
-                        {source_hint}&nbsp;&nbsp;&nbsp;&nbsp; {speed_str}{logger.format_duration(total_ms)} &nbsp;&nbsp;&nbsp;&nbsp; {atime}
+                        {source_hint}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {speed_str}{logger.format_duration(total_ms)} &nbsp;&nbsp;&nbsp;&nbsp; {atime}
                         </div>
                     """
                     rendered_html = render_markdown_html(partial_text)
