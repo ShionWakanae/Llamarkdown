@@ -24,9 +24,7 @@ def rewrite_image_paths(md_str: str, path: str) -> str:
 
     def repl(m):
         image_path = m.group(2).replace("\\", "/")
-
         full_path = f"/static/ref_md/{relative_dir}/{image_path}"
-
         return f"![{m.group(1)}]({full_path})"
 
     return re.sub(
@@ -123,7 +121,11 @@ class Settings:
             temperature=0.0,
             system_prompt=self.rewrite_system_prompt,
             extra_body={
+                "chat_template_kwargs": {
+                    "enable_thinking": False,
+                },
                 "enable_thinking": False,
+                "thinking": {"type": "disabled"},
             },
         )
 
