@@ -8,7 +8,7 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core import StorageContext
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from utils.logger import logger
-from utils.settings import settings, REF_MD_DIR, CHROMA_DB_PATHs
+from utils.settings import settings, REF_MD_DIR, CHROMA_DB_PATH
 from pathlib import Path
 from utils.cuda import check_cuda
 from indexing.VisionClient import VisionClient
@@ -131,12 +131,12 @@ if __name__ == "__main__":
         log("[OCR+] Skip image enhancement")
 
     try:
-        store_path = Path(CHROMA_DB_PATHs)
+        store_path = Path(CHROMA_DB_PATH)
         if store_path.exists():
-            shutil.rmtree(CHROMA_DB_PATHs)
+            shutil.rmtree(CHROMA_DB_PATH)
 
         # 初始化 Chroma（持久化目录）
-        chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATHs)
+        chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
         # collection（类似表）
         chroma_collection = chroma_client.get_or_create_collection(
             "docs", metadata={"hnsw:space": "cosine"}
