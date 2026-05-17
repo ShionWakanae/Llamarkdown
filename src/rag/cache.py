@@ -3,12 +3,12 @@ import json
 import hashlib
 import time
 from pathlib import Path
-
 import numpy as np
-
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-
 from utils.settings import settings, CACHE_DB_PATH
+from utils.logger import logger
+
+log = logger.log
 
 
 def serialize_source_nodes(nodes):
@@ -81,7 +81,6 @@ class AnswerCache:
             )
             """
         )
-
         self.conn.commit()
 
         self.embed_model = HuggingFaceEmbedding(
@@ -90,10 +89,12 @@ class AnswerCache:
             embed_batch_size=8,
         )
 
-    #
-    # build cache query
-    #
+        self.knowledge_hash = self.build_knowledge_hash()
+        deleted = self.invalidate_old_cache()
+        cache_delete_msg = "" if deleted == 0 else f", {deleted} old entries removed"
+        log(f"[RAG] Cache ready{cache_delete_msg}")
 
+    # build cache query
     def build_cache_query(
         self,
         retrieval_query: str,
@@ -111,10 +112,7 @@ class AnswerCache:
 {presentation_intent}
         """.strip()
 
-    #
     # embedding
-    #
-
     def embed_text(self, text: str):
         emb = self.embed_model.get_text_embedding(text)
         return np.array(
@@ -122,10 +120,7 @@ class AnswerCache:
             dtype=np.float32,
         )
 
-    #
     # cosine similarity
-    #
-
     def cosine_similarity(
         self,
         a: np.ndarray,
@@ -138,15 +133,10 @@ class AnswerCache:
 
         return float(np.dot(a, b) / denom)
 
-    #
     # knowledge hash
-    #
-
     def build_knowledge_hash(self):
         base = []
-
         root = Path(settings.app_doc_path)
-
         if not root.exists():
             return "empty"
 
@@ -157,13 +147,9 @@ class AnswerCache:
                 base.append(f"{path}:{stat.st_size}:{int(stat.st_mtime)}")
 
         joined = "\n".join(base)
-
         return hashlib.md5(joined.encode("utf-8")).hexdigest()
 
-    #
     # search cache
-    #
-
     def search(
         self,
         retrieval_query: str,
@@ -173,7 +159,6 @@ class AnswerCache:
         top_k=5,
     ):
         knowledge_hash = self.build_knowledge_hash()
-
         cache_query = self.build_cache_query(
             retrieval_query=retrieval_query,
             presentation_intent=presentation_intent,
@@ -181,7 +166,6 @@ class AnswerCache:
         )
 
         query_emb = self.embed_text(cache_query)
-
         rows = self.conn.execute(
             """
             SELECT
@@ -201,7 +185,6 @@ class AnswerCache:
         ).fetchall()
 
         scored = []
-
         for row in rows:
             (
                 cache_id,
@@ -229,6 +212,10 @@ class AnswerCache:
                     query_emb,
                     emb,
                 )
+
+                # filter by presentation intent
+                if cached_presentation != presentation_intent:
+                    continue
 
                 scored.append(
                     {
@@ -263,10 +250,22 @@ class AnswerCache:
             "top_results": top_results,
         }
 
-    #
-    # save cache
-    #
+    # delete old cache
+    def invalidate_old_cache(self):
+        cursor = self.conn.execute(
+            """
+            DELETE FROM answer_cache
+            WHERE knowledge_hash <> ?
+            """,
+            (self.knowledge_hash,),
+        )
+        deleted = cursor.rowcount
+        self.conn.commit()
+        if deleted > 0:
+            self.conn.execute("VACUUM")
+        return deleted
 
+    # save cache
     def save(
         self,
         retrieval_query: str,
@@ -302,7 +301,6 @@ class AnswerCache:
             return
 
         knowledge_hash = self.build_knowledge_hash()
-
         cache_query = self.build_cache_query(
             retrieval_query=retrieval_query,
             presentation_intent=presentation_intent,
@@ -310,14 +308,12 @@ class AnswerCache:
         )
 
         embedding = self.embed_text(cache_query)
-
         embedding_json = json.dumps(
             embedding.tolist(),
             ensure_ascii=False,
         )
 
         cache_key = hashlib.md5(cache_query.encode("utf-8")).hexdigest()
-
         self.conn.execute(
             """
             INSERT INTO answer_cache (
@@ -345,7 +341,6 @@ class AnswerCache:
                 int(time.time()),
             ),
         )
-
         self.conn.commit()
 
 
