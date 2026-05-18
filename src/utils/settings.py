@@ -116,7 +116,7 @@ class Settings:
             model=self.llm_model_small,
             system_prompt=self.rewrite_system_prompt,
             temperature=0.0,
-            max_tokens=200,
+            max_tokens=2048,
         )
 
         self.reranker = FlagEmbeddingReranker(
