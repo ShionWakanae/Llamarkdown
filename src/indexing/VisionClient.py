@@ -59,8 +59,10 @@ class VisionClient:
             temperature=0.1,
             top_p=0.8,
         )
+        model_name = None
         content = response.choices[0].message.content
-        return (content or "").strip()
+        model_name = response.model
+        return (content or "").strip(), model_name
 
     def _encode_image(
         self,

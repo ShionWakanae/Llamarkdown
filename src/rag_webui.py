@@ -1000,6 +1000,7 @@ def main():
                         f"Query: {timing.get('query_ms', 0)} ms, LLM: {timing.get('llm_ms', 0)} ms, Total: {timing.get('total_ms', 0)} ms",
                         False,
                     )
+                    answer_model = ""
                     if answer_source != "dict":
                         usage = service.get_token_usage()
                         src = usage["rewrite"]["source"]
@@ -1010,9 +1011,9 @@ def main():
                         )
                         if answer_source == "llm":
                             src = usage["answer"]["source"]
-                            model = usage["answer"]["model"]
+                            answer_model = usage["answer"]["model"]
                             log(
-                                f"Answers token in: {usage['answer']['prompt_tokens']}, out:{usage['answer']['completion_tokens']}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
+                                f"Answers token in: {usage['answer']['prompt_tokens']}, out:{usage['answer']['completion_tokens']}, from: {answer_model if src == 'llm' else f'{answer_model} [bold red]{src}[/]!!!'}",
                                 False,
                             )
                             log(
@@ -1051,7 +1052,7 @@ def main():
                     if event_source == "dict":
                         source_hint = "🔍"
                     elif event_source == "llm":
-                        source_hint = f"📖{settings.llm_model}"
+                        source_hint = f"📖{answer_model}"
                     elif event_source == "cache":
                         source_hint = "📦"
 

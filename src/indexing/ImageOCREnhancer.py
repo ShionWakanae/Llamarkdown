@@ -542,10 +542,12 @@ class ImageOCREnhancer:
         if self.debug:
             log(f"[OCR+] analyzing: {image_path.name}")
 
-        caption = self.vision_client.analyze_image(
+        caption, model_name = self.vision_client.analyze_image(
             image_path=image_path,
             prompt=self.PROMPT,
         )
+        if model_name:
+            self.vision_model = model_name
 
         if not caption:
             caption = not_ocrable

@@ -104,9 +104,9 @@ def hybrid_tokenizer(text):
 
 def stream_with_usage(llm, prompt, usage_collector: UsageCollector, engine):
     stream = llm.stream_complete(prompt)
-
     usage_holder = {}
     full_completion = ""
+    last_model = None
     try:
         for chunk in stream:
             delta = getattr(chunk, "delta", "")
@@ -114,7 +114,6 @@ def stream_with_usage(llm, prompt, usage_collector: UsageCollector, engine):
                 full_completion += delta
 
             yield chunk
-
             raw = getattr(chunk, "raw", None)
             if raw:
                 usage_obj = getattr(raw, "usage", None)
@@ -124,8 +123,11 @@ def stream_with_usage(llm, prompt, usage_collector: UsageCollector, engine):
                             usage_holder.get(key, 0),
                             getattr(usage_obj, key, 0),
                         )
+                model = getattr(raw, "model", None)
+                if model:
+                    last_model = model
     finally:
-        model = engine._get_model_name(llm)
+        model = last_model or engine._get_model_name(llm)
         if usage_holder:
             usage_collector.set_answer(
                 usage_holder,
@@ -281,7 +283,7 @@ Windows平台对比Linux平台，用表格展示
                 self.llm,
                 prompt,
             )
-            model = engine._get_model_name(self.llm)
+            model = engine.extract_model_name(response, self.llm)
             engine.usage.set_rewrite(usage, source, model)
             # log(f"[RewriteUsage] {usage}")
 
@@ -351,6 +353,22 @@ class RagEngine:
         self.usage = UsageCollector()
         self.need_cache = True
         log("[RAG] Ready")
+
+    def extract_model_name(self, response, llm):
+        raw = getattr(response, "raw", None)
+        # OpenAI compatible object
+        model = getattr(raw, "model", None)
+        if model:
+            return model
+
+        # dict raw
+        if isinstance(raw, dict):
+            model = raw.get("model")
+            if model:
+                return model
+
+        # fallback
+        return self._get_model_name(llm)
 
     def _get_model_name(self, llm):
         return (
@@ -942,7 +960,6 @@ class RagEngine:
 
     def extract_or_estimate_usage(self, response, llm, prompt):
         usage = extract_usage(response)
-
         if usage:
             return usage, "llm"
 
