@@ -32,7 +32,6 @@ class MyLLM(CustomLLM):
         default_kwargs = {
             "temperature": 0.0,
             # shutdown thinking for all providers
-            "reasoning_effort": "none",
             "extra_body": {
                 "chat_template_kwargs": {
                     "enable_thinking": False,
