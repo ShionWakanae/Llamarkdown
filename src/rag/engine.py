@@ -18,6 +18,8 @@ import chromadb
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core import VectorStoreIndex
 from collections import defaultdict
+from typing import Literal
+from pydantic import BaseModel, Field
 from rag.cache import answer_cache
 from utils.logger import logger
 from utils.settings import settings, rewrite_image_paths, CHROMA_DB_PATH
@@ -168,6 +170,13 @@ def extract_usage(response: CompletionResponse):
     return usage
 
 
+class QueryAnalysis(BaseModel):
+    question_type: Literal["RAG", "CHAT", "INVALID"]
+    retrieval_query: str = Field(default="", max_length=200)
+    presentation_intent: str = ""
+    user_intent: str = ""
+
+
 class QuestionNavigator:
     def __init__(self):
         self.llm = settings.rewrite_llm
@@ -312,10 +321,7 @@ Windows平台对比Linux平台，用表格展示
             )
             model = engine.extract_model_name(response, self.llm)
             engine.usage.set_rewrite(usage, source, model)
-            # log(f"[RewriteUsage] {usage}")
-
             text = response.text.strip()
-            log(f"[QueryAnalyzeRaw] {text}")
             match = re.search(
                 r"\{.*\}",
                 text,
@@ -326,20 +332,21 @@ Windows平台对比Linux平台，用表格展示
                 raise ValueError("No JSON found")
 
             json_text = match.group(0)
-            result = safe_extract_json_fields(json_text)
+            data = safe_extract_json_fields(json_text)
+            result = QueryAnalysis.model_validate(data)
+            # print(result)
             return result
 
         except Exception as e:
             log(f"[QueryAnalyzeError] {e}")
             print(traceback.format_exc())
-            if text:
-                print(f"{text}")
+            print(response)
 
-            return {
-                "retrieval_query": question,
-                "presentation_intent": "",
-                "user_intent": "",
-            }
+            # fallback to RAG, if query rewrite failed
+            return QueryAnalysis(
+                question_type="RAG",
+                retrieval_query=question,
+            )
 
     def _rule_filter(self, question: str):
         q = question.strip().lower()
@@ -688,10 +695,7 @@ class RagEngine:
         # print(query_mode)
         if query_mode == QueryMode.NORMAL or query_mode == QueryMode.CONFIRM_RAG:
             analysis = self.navigator.analyze_query(question, self)
-            question_type = analysis.get(
-                "question_type",
-                "RAG",
-            )
+            question_type = analysis.question_type
             if query_mode == QueryMode.NORMAL and question_type != "RAG":
                 if question_type == "CHAT":
                     ret = "您好，我是专职的企业知识库的智能助理，您可以直接提出问题。"
@@ -713,13 +717,9 @@ class RagEngine:
                 }
                 return
 
-            retrieval_query = analysis.get(
-                "retrieval_query",
-                question,
-            )
-
-            user_intent = analysis.get("user_intent", "")
-            presentation_intent = analysis.get("presentation_intent", "")
+            retrieval_query = analysis.retrieval_query or question
+            user_intent = analysis.user_intent or ""
+            presentation_intent = analysis.presentation_intent or ""
             if not retrieval_query:
                 retrieval_query = question
                 self.need_cache = False
