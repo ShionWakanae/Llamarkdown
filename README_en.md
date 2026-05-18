@@ -5,75 +5,67 @@
 [简体中文](README.md) | **English**
 
 ## What Is This Project About
+> [!Note]
 Like this little cat, I am learning and understanding enterprise knowledge bases and RAG from scratch.  
 The goal is to build a knowledge-base question answering system for telecommunications/mobile support network enterprises, with high retrieval accuracy, fast response speed, and traceability back to the original documents. All of this is intended to work locally without Internet access for security reasons.  
-
-The project is based on LlamaIndex, but as development progressed and specific problems needed to be solved, LlamaIndex components were gradually replaced with custom implementations.  
-
-At the same time, Docling was introduced as a dependency to support document conversion within the project.
+>
+> The project is based on LlamaIndex, but as development progressed and specific problems needed to be solved, LlamaIndex components were gradually replaced with custom implementations.  
+>
+> At the same time, Docling was introduced as a dependency to support document conversion within the project.
 
 ![](res/cat_typing.gif)
 
-## About LlamaIndex
-> [!Note]
-> A data ingestion and Retrieval-Augmented Generation (RAG) framework for Large Language Models (LLMs). It connects external data sources such as local documents, databases, APIs, and knowledge bases to LLMs, enabling question-answering based on private data. It supports multiple data sources, vector databases, and model services including PDF, Markdown, FAISS, Chroma, Qdrant, OpenAI, and local llama.cpp models. It also provides advanced RAG capabilities such as hybrid retrieval, query routing, and multi-index composition. LlamaIndex emphasizes modularity and composability, making it suitable for knowledge-base QA, document search, code retrieval, and offline local RAG scenarios.
 
+## ⭐Features
 
-## Features
+### (1) Convert Original Documents
 
-### (1) Convert the Original Document to Markdown Format
-
-1. Convert the original document to Markdown format.
-2. Fix the Markdown file format.
-3. Save images from the original document to external files and reference them in the Markdown file.
-4. Recognize and add image data blocks to the Markdown file.
+1. Convert original documents into Markdown-format reference documents
+   * Save images from the original documents as external standalone image files and re-reference them in the reference documents
+2. Fix and enhance reference documents
+   * Repair Markdown formatting issues such as tables, lists, and related structures
+   * Use LLMs to recognize images referenced in documents and add image description blocks
+   * Considering that original documents may already be in Markdown format and can be manually copied in and edited, all data correction and image recognition are performed during the indexing stage
 
 ### (2) Build the Knowledge Base
 
-1. Build the vector database required for RAG. Data is stored in `project/storage/chroma_db` (using embedded Chroma DB).
-
-   * A custom heading structure parser performs chunking based on Markdown heading hierarchy.
-   * A custom content-aware parser chunks subsection content based on text, tables, code blocks, and more.
-   * Adds metadata to chunks (original file directory, filename, start/end line numbers).
-   * Splits large table chunks while preserving table headers, and adds metadata (start/end rows in the original table).
-   * Splits large text chunks based on paragraphs and line breaks.
-   * ⚠️ _Other types of oversized content are not yet handled!!!_ Some chunks may still become too large (work in progress...).
-   * Injects section headings into chunk text.
-   * Merges small chunks from sibling sections when appropriate.
-   * Enhances metadata based on titles, content, and predefined metadata rules (not yet used during retrieval, still under consideration...).
-   * Uses CUDA acceleration for embedding generation.
-2. Build a fast retrieval dictionary. Data is stored in `project/storage/dict/` (manually copy text files there; no automatic indexing required).
-   * Supports text files using tabs as separators, with one entry per line.
-   * The first field is the entry `keyword`, followed by one or more `definitions`.
-   * Supports duplicate keywords, allowing multiple lines to explain the same term.
-   * This feature was added specifically for industry use cases. Technical terms, field structures, and any keyword-definition mappings can be retrieved quickly.
+1. Build the vector database required for RAG. Data is stored in the `project/storage/chroma_db/` directory
+   * A custom parser performs chunking on Markdown files based on heading and content structure
+   * Large table chunks are split while preserving table headers
+   * Large text chunks are split based on paragraphs and line breaks
+   * ⚠️ Oversized content is not yet fully handled!!! _Please observe carefully — chunks may still become excessively large (work in progress...)_
+   * Merge small chunks from sibling sections when appropriate
+   * Add necessary metadata to chunks and inject section headings
+   * Enhance metadata according to predefined rules (not yet used during querying, still under consideration...)
+1. Support fast retrieval dictionaries. Data is stored in the `project/storage/dict/` directory. Please manually copy text files into this directory; this is not done automatically by the program
+   * Supports text files using tabs as separators, with one entry per line
+   * The first field is the entry `keyword`, followed by one or more `definitions`
+   * Supports duplicate keywords, meaning multiple lines can explain the same term
+   * This feature was added specifically for industry-oriented use cases, such as technical terminology and field structures...
    
 ### (3) Query and Retrieval
 
-1. Fast dictionary lookup
-   * Performs millisecond-level dictionary lookup for single words or terms.
+1. Fast dictionary retrieval
+   * Perform millisecond-level dictionary lookup for single words or terms
    * Supports querying multiple keywords in a simple sentence (for example: `What are CW and hold?`, `IMPI IMPU IMSI MSISDN`)
-   * If the dictionary does not return a match, RAG retrieval is performed directly.
-   * If a dictionary match is found, the system prompts whether to continue searching the knowledge base (WEB only).
-2. Vector database retrieval
-   * Supports either online or local LLMs, with separate configurable large/small models for different tasks.
-   * User intent recognition and keyword enhancement improve recall accuracy and response quality.
-   * Uses hybrid retrieval combining LLM semantic search and BM25 keyword search.
-   * Re-ranks retrieved content.
-   * Dynamically expands selection after reranking.
-3. Retrieval query interface
-   * Supports both WEBUI and CLI queries.
-   * Includes spinners and streaming output for impatient users.
-   * WEBUI can display reference documents, allow original document reading, and highlight referenced fragments within documents.
-   * Original document viewing supports displaying internally referenced Markdown images stored in specific locations (work in progress...).
-4. Debugging and feedback
+   * If the dictionary does not return a match, RAG retrieval is performed directly; otherwise, the user is asked whether to continue with RAG retrieval (WEB only)
+1. Vector database retrieval
+   * Supports either online or local LLMs, with configurable large/small models handling different tasks
+   * User intent recognition and keyword enhancement improve retrieval accuracy and response quality
+   * Uses hybrid retrieval combining LLM semantic search and BM25 keyword search, along with reranking, dynamic selection, and strict-match supplementation
+   * Uses answer caching to accelerate retrieval. Data is stored in the `project/storage/cache/` directory (retrieval caching may also be considered...)
+1. Retrieval query interface
+   * Supports both WEBUI and CLI query retrieval
+   * Answers display reference documents, allow full document reading, highlight referenced fragments, and support referenced image display
+   * Supports navigation from `reference documents` to the `original PDF` for deeper browsing
+1. Debugging and feedback
    * This project is mainly intended as a RAG reference implementation. Nobody is actually using it directly... right?
-   * CLI can optionally print detailed retrieval information.
-   * WEB includes a debug panel showing basic retrieval information.
-   * If necessary, modify the code to add additional debug information for correcting source data or reporting bugs.
+   * CLI can optionally print detailed retrieval information
+   * WEB includes a debug panel showing basic retrieval information
+   * If necessary, please modify the code yourself to add additional debugging information, or report issues to me
 
 
-## Installation
+## ⭐Installation
 💡 My own environment uses `python 3.10`. Newer Python versions have not been tested.
 
 1. Clone the repository into a local directory:  
@@ -83,8 +75,8 @@ At the same time, Docling was introduced as a dependency to support document con
 3. Install CUDA dependencies: `pip install -r requirements_cuda.txt`  (if using CUDA acceleration)
 4. Install dependencies: `pip install -r requirements.txt`
 
-## Usage
-### (0) Parameter Configurationℹ️
+## ⭐Usage
+### ℹ️(0) Parameter Configuration
 
 Copy `.env_sample` to `.env`, then modify the API endpoints, API keys, model configurations (local or online), and other settings as needed. Most other parameters can initially remain unchanged.
 
@@ -134,23 +126,22 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 
 If you are unsure about CUDA versions, please refer to: [CUDA Version Notes](./doc/cuda.md).
 
-### (1) Convert Documentsℹ️
+### ℹ️(1) Convert Documents
 > If the conversion quality is unsatisfactory, you may also try Microsoft's [markitdown](https://github.com/microsoft/markitdown), or alternatives such as [pymupdf4llm](https://github.com/pymupdf/PyMuPDF4LLM), [marker](https://github.com/datalab-to/marker), and others...
 
 Extract images from documents such as docx/pdf and convert them to markdown with a directory structure, then store the results in the `ref_md` directory under `APP_DOC_PATH`.  
 If the document is a PDF, you may choose to copy it to the `ori_pdf` directory under `APP_DOC_PATH`.  
 You can also place already converted markdown files directly into the `ref_md` directory under `APP_DOC_PATH`.  
-After adding or modifying files, the knowledge base needs to be re-indexed.
-
-
 
 ``` shell
 python .\src\convert_cli.py "input_path"
 ```
+Whenever files are added or modified, the knowledge base must be re-indexed, and the query cache will also become invalid (see the next step).
 
-### (2) Build the Knowledge Baseℹ️
+### ℹ️(2) Build the Knowledge Base
 Index `.md` files under the `ref_md` directory inside `APP_DOC_PATH`:  
-It is recommended to first use the debug parameter to inspect chunking results before performing actual indexing:
+
+It is recommended to first use the debug parameter to inspect document correction, image recognition, and chunking results for this batch of documents, and confirm everything is working properly before performing formal indexing:
 
 ``` shell
 python .\src\index_cli.py --debug    # Only preprocesses documents and prints logs without indexing vectors
@@ -167,7 +158,7 @@ i9-12900F * Generating embeddings: 100%|█████████████�
 4060TI16G * Generating embeddings: 100%|█████████████████████| 582/582 [00:30<00:00, 19.26it/s]
 ```
 
-### (3) Query the Knowledge Baseℹ️
+### ℹ️(3) Query the Knowledge Base
 #### CLI Query
 ``` shell
 python .\src\rag_cli.py 'your question'
@@ -219,6 +210,9 @@ More videos are continuously being uploaded. Please check the channel if needed.
 
 ## License
 ![license](https://img.shields.io/github/license/ShionWakanae/llamaIndexSample.svg "MIT license")
+
+> [!Important]
+> This project is licensed under the MIT License. You can use, modify, and distribute the code of this project as long as you follow the terms of the license.
 
 Third-party libraries:
 - Docling (MIT)
