@@ -279,15 +279,12 @@ class AnswerCache:
             serialize_source_nodes(source_nodes),
             ensure_ascii=False,
         )
-        #
         # skip low quality
-        #
-
         if not answer:
-            return
+            return False
 
         if len(answer) < 20:
-            return
+            return False
 
         if answer.startswith(
             (
@@ -296,7 +293,7 @@ class AnswerCache:
                 "无法回答",
             )
         ):
-            return
+            return False
 
         knowledge_hash = self.build_knowledge_hash()
         cache_query = self.build_cache_query(
@@ -340,6 +337,7 @@ class AnswerCache:
             ),
         )
         self.conn.commit()
+        return True
 
 
 answer_cache = AnswerCache()

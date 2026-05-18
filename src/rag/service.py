@@ -1,5 +1,6 @@
 import time
 import re
+import traceback
 from rag.engine import engine
 from rag.dict import dict_engine
 from rag.cache import answer_cache
@@ -289,35 +290,21 @@ class RagService:
         # save semantic cache
         if final_answer and (not is_cached) and engine.need_cache:
             try:
-                answer_cache.save(
-                    retrieval_query=getattr(
-                        engine,
-                        "last_retrieval_query",
-                        question,
-                    ),
-                    presentation_intent=getattr(
-                        engine,
-                        "last_presentation_intent",
-                        "",
-                    ),
-                    user_intent=getattr(
-                        engine,
-                        "last_user_intent",
-                        "",
-                    ),
+                if answer_cache.save(
+                    retrieval_query=getattr(engine, "last_retrieval_query", question),
+                    presentation_intent=getattr(engine, "last_presentation_intent", ""),
+                    user_intent=getattr(engine, "last_user_intent", ""),
                     answer=final_answer,
-                    source_nodes=response.get(
-                        "source_nodes",
-                        [],
-                    ),
-                )
-                log("[Cache] Saved")
+                    source_nodes=response.get("source_nodes", []),
+                ):
+                    log("[Cache] Saved")
 
             except Exception as e:
                 log(
                     f"[Cache] Save failed: {e}",
                     False,
                 )
+                print(traceback.format_exc())
 
 
 service = RagService()
