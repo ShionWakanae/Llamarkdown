@@ -48,7 +48,7 @@ args = parser.parse_args()
 quest_str = args.question
 force_rag = args.ForceRAG
 if force_rag:
-    query_mode = QueryMode.QUOTED
+    query_mode = QueryMode.CONFIRM_RAG
 else:
     query_mode = QueryMode.NORMAL
 
@@ -64,7 +64,7 @@ with Live(Text("....", style="yellow"), refresh_per_second=2) as live:
     first = True
     source_nodes = []
     accumulated = ""
-    for event in service.stream_answer(quest_str, QueryMode.NORMAL):
+    for event in service.stream_answer(quest_str, query_mode):
         if event["type"] == "token":
             chunk = event["text"]
             if chunk:
@@ -141,9 +141,9 @@ if answer_source != "dict":
             False,
         )
         log(f"Total token usage: {usage['total']['total_tokens']}", False)
-print()
 
-if debug_data:
+if debug_data and answer_source != "dict":
+    print()
     show_details = input("您要查看具体的命中信息吗？[y/N]: ").strip().lower()
     if show_details.lower() in ("y", "yes"):
         log(
