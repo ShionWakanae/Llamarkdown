@@ -289,15 +289,13 @@ class AnswerCache:
         if len(answer) < 20:
             return
 
-        if answer in {
-            "不知道",
-            "不知道.",
-            "不知道。",
-            "我不知道",
-            "我不知道.",
-            "我不知道。",
-            "无法回答",
-        }:
+        if answer.startswith(
+            (
+                "不知道",
+                "我不知道",
+                "无法回答",
+            )
+        ):
             return
 
         knowledge_hash = self.build_knowledge_hash()

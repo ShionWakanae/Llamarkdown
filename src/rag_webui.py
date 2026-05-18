@@ -1036,16 +1036,13 @@ def main():
                     should_show_sources = (
                         ref_text
                         and got_answer
-                        and partial_text.strip()
-                        not in [
-                            "不知道",
-                            "不知道.",
-                            "不知道。",
-                            "我不知道",
-                            "我不知道.",
-                            "我不知道。",
-                            "无法回答",
-                        ]
+                        and not partial_text.strip().startswith(
+                            (
+                                "不知道",
+                                "我不知道",
+                                "无法回答",
+                            )
+                        )
                     )
                     # final update
                     source_hint = ""
