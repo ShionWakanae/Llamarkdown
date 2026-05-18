@@ -66,7 +66,7 @@
 
 
 ## ⭐安装
-💡我自己用的环境是`python 3.10`，没测试过新的python版本。
+我自己用的环境是`python 3.10`，没测试过新的python版本。
 
 1. 将仓库代码克隆到一个本地目录： 
 `git clone https://github.com/ShionWakanae/llamaIndexSample.git`
@@ -74,6 +74,8 @@
 2. 激活虚拟环境：`.\venv\scripts\activate`
 3. 安装CUDA依赖：`pip install -r requirements_cuda.txt`  (如果使用CUDA加速)
 4. 安装依赖：`pip install -r requirements.txt`
+
+💡可选但最好安装[Libre Office](https://zh-cn.libreoffice.org/download/libreoffice/)程序，并加入系统路径。
 
 ## ⭐使用
 ### ℹ️（0）参数配置

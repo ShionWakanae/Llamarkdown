@@ -66,7 +66,7 @@ The goal is to build a knowledge-base question answering system for telecommunic
 
 
 ## ⭐Installation
-💡 My own environment uses `python 3.10`. Newer Python versions have not been tested.
+My own environment is `python 3.10`. Newer Python versions have not been tested.
 
 1. Clone the repository into a local directory:  
 `git clone https://github.com/ShionWakanae/llamaIndexSample.git`
@@ -74,6 +74,8 @@ The goal is to build a knowledge-base question answering system for telecommunic
 2. Activate the virtual environment: `.\venv\scripts\activate`
 3. Install CUDA dependencies: `pip install -r requirements_cuda.txt`  (if using CUDA acceleration)
 4. Install dependencies: `pip install -r requirements.txt`
+
+💡Optional, but recommended to install [LibreOffice](https://www.libreoffice.org/download/download-libreoffice/) and add it to the system PATH.
 
 ## ⭐Usage
 ### ℹ️(0) Parameter Configuration
