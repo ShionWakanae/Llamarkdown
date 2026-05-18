@@ -826,7 +826,9 @@ class RagEngine:
         ):
             exact_start = time.perf_counter()
             nodes_selected = nodes_rerank[: settings.retrieval_rerank_top_n]
-            supplement_limit = settings.retrieval_rerank_top_n_max - len(nodes_selected)
+            supplement_limit = (
+                settings.retrieval_rerank_top_n_max + settings.retrieval_rerank_top_n
+            ) / 2 - len(nodes_selected)
             exact_nodes = self.exact_search(
                 retrieval_query,
                 existing_nodes=nodes_selected,
