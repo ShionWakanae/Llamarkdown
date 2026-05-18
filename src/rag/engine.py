@@ -286,34 +286,40 @@ Windows平台对比Linux平台，用表格展示
 
         text = None
         try:
-            response = self.llm.complete(
-                prompt,
-                response_format={
-                    "type": "json_schema",
-                    "json_schema": {
-                        "name": "query_analysis",
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "question_type": {
-                                    "type": "string",
-                                    "enum": ["RAG", "CHAT", "INVALID"],
+            if "deepseek" in str(self.llm._client.base_url).lower():
+                response = self.llm.complete(
+                    prompt,
+                    response_format={"type": "json_object"},
+                )
+            else:
+                response = self.llm.complete(
+                    prompt,
+                    response_format={
+                        "type": "json_schema",
+                        "json_schema": {
+                            "name": "query_analysis",
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "question_type": {
+                                        "type": "string",
+                                        "enum": ["RAG", "CHAT", "INVALID"],
+                                    },
+                                    "retrieval_query": {"type": "string"},
+                                    "presentation_intent": {"type": "string"},
+                                    "user_intent": {"type": "string"},
                                 },
-                                "retrieval_query": {"type": "string"},
-                                "presentation_intent": {"type": "string"},
-                                "user_intent": {"type": "string"},
+                                "required": [
+                                    "question_type",
+                                    "retrieval_query",
+                                    "presentation_intent",
+                                    "user_intent",
+                                ],
+                                "additionalProperties": False,
                             },
-                            "required": [
-                                "question_type",
-                                "retrieval_query",
-                                "presentation_intent",
-                                "user_intent",
-                            ],
-                            "additionalProperties": False,
                         },
                     },
-                },
-            )
+                )
             usage, source = engine.extract_or_estimate_usage(
                 response,
                 self.llm,
@@ -340,7 +346,8 @@ Windows平台对比Linux平台，用表格展示
         except Exception as e:
             log(f"[QueryAnalyzeError] {e}")
             print(traceback.format_exc())
-            print(response)
+            if response:
+                print(response)
 
             # fallback to RAG, if query rewrite failed
             return QueryAnalysis(
