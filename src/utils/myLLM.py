@@ -32,6 +32,7 @@ class MyLLM(CustomLLM):
         default_kwargs = {
             "temperature": 0.0,
             # shutdown thinking for all providers
+            "reasoning_effort": "none",
             "extra_body": {
                 "chat_template_kwargs": {
                     "enable_thinking": False,
@@ -66,9 +67,10 @@ class MyLLM(CustomLLM):
     def complete(
         self,
         prompt: str,
+        response_format=None,
         **kwargs: Any,
     ) -> CompletionResponse:
-        return self._complete(prompt, **kwargs)
+        return self._complete(prompt, response_format, **kwargs)
 
     @llm_completion_callback()
     def stream_complete(
@@ -100,6 +102,7 @@ class MyLLM(CustomLLM):
         self,
         prompt: str,
         stream: bool,
+        response_format=None,
         **kwargs,
     ):
         final_kwargs = {
@@ -109,7 +112,8 @@ class MyLLM(CustomLLM):
             **self.default_kwargs,
             **kwargs,
         }
-
+        if response_format:
+            final_kwargs["response_format"] = response_format
         if stream:
             final_kwargs.setdefault(
                 "stream_options",
@@ -123,11 +127,13 @@ class MyLLM(CustomLLM):
     def _complete(
         self,
         prompt: str,
+        response_format=None,
         **kwargs: Any,
     ) -> CompletionResponse:
         final_kwargs = self._merge_kwargs(
             prompt=prompt,
             stream=False,
+            response_format=response_format,
             **kwargs,
         )
         response = self._client.chat.completions.create(**final_kwargs)

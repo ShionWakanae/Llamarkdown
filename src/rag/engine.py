@@ -277,7 +277,34 @@ Windows平台对比Linux平台，用表格展示
 
         text = None
         try:
-            response = self.llm.complete(prompt)
+            response = self.llm.complete(
+                prompt,
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "query_analysis",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "question_type": {
+                                    "type": "string",
+                                    "enum": ["RAG", "CHAT", "INVALID"],
+                                },
+                                "retrieval_query": {"type": "string"},
+                                "presentation_intent": {"type": "string"},
+                                "user_intent": {"type": "string"},
+                            },
+                            "required": [
+                                "question_type",
+                                "retrieval_query",
+                                "presentation_intent",
+                                "user_intent",
+                            ],
+                            "additionalProperties": False,
+                        },
+                    },
+                },
+            )
             usage, source = engine.extract_or_estimate_usage(
                 response,
                 self.llm,
@@ -288,7 +315,7 @@ Windows平台对比Linux平台，用表格展示
             # log(f"[RewriteUsage] {usage}")
 
             text = response.text.strip()
-            # log(f"[QueryAnalyzeRaw] {text}")
+            log(f"[QueryAnalyzeRaw] {text}")
             match = re.search(
                 r"\{.*\}",
                 text,
