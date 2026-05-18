@@ -5,7 +5,7 @@ import time
 from pathlib import Path
 import numpy as np
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from utils.settings import settings, CACHE_DB_PATH
+from utils.settings import settings, CACHE_DB_PATH, REF_MD_DIR
 from utils.logger import logger
 
 log = logger.log
@@ -136,7 +136,7 @@ class AnswerCache:
     # knowledge hash
     def build_knowledge_hash(self):
         base = []
-        root = Path(settings.app_doc_path)
+        root = (Path(settings.app_doc_path) / REF_MD_DIR).resolve()
         if not root.exists():
             return "empty"
 
