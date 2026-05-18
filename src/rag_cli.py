@@ -91,16 +91,19 @@ with Live(Text("....", style="yellow"), refresh_per_second=2) as live:
         if not first and event["type"] != "token":
             if accumulated:
                 print(f"[bold bright_magenta]{accumulated}[/]", flush=True)
+                print()
                 accumulated = ""
 
     if accumulated:
         print(f"[bold bright_magenta]{accumulated}[/]", flush=True)
+        print()
 
     if first:
         spinner.stop()
         live.stop()
         print("[bold bright_magenta]对不起，我检索了资料，但还是不知道答案……[/]")
-print()
+        print()
+
 print()
 if source_nodes:
     print("Reference:")
@@ -122,7 +125,7 @@ if source_nodes:
 
 log("Answer completed")
 log(
-    f"Query: {timing.get('query_ms', 0)} ms, LLM: {timing.get('llm_ms', 0)} ms, Total: {timing.get('total_ms', 0)} ms",
+    f"Retrieval: {timing.get('query_ms', 0)} ms, Answer: {timing.get('llm_ms', 0)} ms, Total: {timing.get('total_ms', 0)} ms",
     False,
 )
 if answer_source != "dict":
@@ -130,17 +133,17 @@ if answer_source != "dict":
     src = usage["rewrite"]["source"]
     model = usage["rewrite"]["model"]
     log(
-        f"Rewrite token in: {usage['rewrite']['prompt_tokens']}, out:{usage['rewrite']['completion_tokens']}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
+        f"Rewrite tokens in: {usage['rewrite']['prompt_tokens']:>5}, out:{usage['rewrite']['completion_tokens']:>5}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
         False,
     )
     if answer_source == "llm":
         src = usage["answer"]["source"]
         model = usage["answer"]["model"]
         log(
-            f"Answers token in: {usage['answer']['prompt_tokens']}, out:{usage['answer']['completion_tokens']}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
+            f"Answers tokens in: {usage['answer']['prompt_tokens']:>5}, out:{usage['answer']['completion_tokens']:>5}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
             False,
         )
-        log(f"Total token usage: {usage['total']['total_tokens']}", False)
+        log(f"Total token usage: {usage['total']['total_tokens']:>5}", False)
 
 if debug_data and answer_source != "dict":
     print()

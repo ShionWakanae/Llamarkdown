@@ -997,7 +997,7 @@ def main():
                     log("Answer completed")
                     log("----------------")
                     log(
-                        f"Query: {timing.get('query_ms', 0)} ms, LLM: {timing.get('llm_ms', 0)} ms, Total: {timing.get('total_ms', 0)} ms",
+                        f"Retrieval: {timing.get('query_ms', 0)} ms, Answers: {timing.get('llm_ms', 0)} ms, Total: {timing.get('total_ms', 0)} ms",
                         False,
                     )
                     answer_model = ""
@@ -1006,18 +1006,18 @@ def main():
                         src = usage["rewrite"]["source"]
                         model = usage["rewrite"]["model"]
                         log(
-                            f"Rewrite token in: {usage['rewrite']['prompt_tokens']}, out:{usage['rewrite']['completion_tokens']}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
+                            f"Rewrite tokens in: {usage['rewrite']['prompt_tokens']:>5}, out:{usage['rewrite']['completion_tokens']:>5}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
                             False,
                         )
                         if answer_source == "llm":
                             src = usage["answer"]["source"]
                             answer_model = usage["answer"]["model"]
                             log(
-                                f"Answers token in: {usage['answer']['prompt_tokens']}, out:{usage['answer']['completion_tokens']}, from: {answer_model if src == 'llm' else f'{answer_model} [bold red]{src}[/]!!!'}",
+                                f"Answers tokens in: {usage['answer']['prompt_tokens']:>5}, out:{usage['answer']['completion_tokens']:>5}, from: {answer_model if src == 'llm' else f'{answer_model} [bold red]{src}[/]!!!'}",
                                 False,
                             )
                             log(
-                                f"Total token usage: {usage['total']['total_tokens']}",
+                                f"Total token usage: {usage['total']['total_tokens']:>5}",
                                 False,
                             )
                     print()
