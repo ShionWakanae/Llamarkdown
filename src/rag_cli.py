@@ -80,7 +80,7 @@ if __name__ == "__main__":
                         first = False
                     accumulated += chunk
                     # 遇到句号、感叹号、问号或换行时输出
-                    if "\n" in accumulated or len(accumulated) > 30:
+                    if "\n" in accumulated or len(accumulated) > 23:
                         print(
                             f"[bold bright_magenta]{accumulated}[/]", end="", flush=True
                         )
