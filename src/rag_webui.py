@@ -5,6 +5,7 @@ from pathlib import Path
 import threading
 from queue import Queue
 import traceback
+import time
 import markdown
 from nicegui import ui
 from nicegui import app
@@ -919,6 +920,7 @@ def main():
 
                     # consume
                     accumulated = ""
+                    streaming_start = time.perf_counter()
                     while True:
                         event = await asyncio.to_thread(queue.get)
                         if event is None:
@@ -929,6 +931,7 @@ def main():
                             got_answer = True
                             if not first_token:
                                 log("Streaming...")
+                                streaming_start = time.perf_counter()
                                 partial_text = ""
                                 first_token = True
                                 if assistant_stage_spinner:
@@ -993,7 +996,10 @@ def main():
 
                     if accumulated:
                         partial_text += accumulated
-
+                    streaming_s = round(
+                        (time.perf_counter() - streaming_start),
+                        2,
+                    )
                     log("Answer completed")
                     log("----------------")
                     log(
@@ -1013,7 +1019,7 @@ def main():
                             src = usage["answer"]["source"]
                             answer_model = usage["answer"]["model"]
                             log(
-                                f"Answers tokens in: {usage['answer']['prompt_tokens']:>5}, out:{usage['answer']['completion_tokens']:>5}, from: {answer_model if src == 'llm' else f'{answer_model} [bold red]{src}[/]!!!'}",
+                                f"Answers tokens in: {usage['answer']['prompt_tokens']:>5}, out:{usage['answer']['completion_tokens']:>5}, from: {answer_model if src == 'llm' else f'{answer_model} [bold red]{src}[/]!!!'} <{round(int(usage['answer']['completion_tokens']) / streaming_s, 2)} tokens/s>",
                                 False,
                             )
                             log(
