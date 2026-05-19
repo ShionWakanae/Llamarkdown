@@ -209,9 +209,114 @@ class IndexBuilder:
             return sub_nodes, len(sub_nodes) > 1
         return [node], False
 
+    def _create_code_chunk_node(
+        self,
+        current_lines: list,
+        chunk_index: int,
+        total_code_lines: int,
+        base_line_start: int,
+        original_metadata: dict,
+        code_block_start_idx: int,  # 该chunk在当前代码块内的起始行索引（0-based）
+    ):
+        """创建单个拆分后的代码 chunk"""
+        chunk_text = "".join(current_lines)
+
+        # 计算相对于代码块的行号（从 1 开始计数）
+        rel_start = code_block_start_idx + 1
+        rel_end = code_block_start_idx + len(current_lines)
+
+        # 注入行号提示到正文最前面
+        line_info = (
+            f"【代码块 第 {rel_start}-{rel_end} 行，共 {total_code_lines} 行】\n"
+        )
+        final_text = line_info + chunk_text
+
+        new_metadata = copy.deepcopy(original_metadata)
+        new_metadata.update(
+            {
+                # 文档绝对行号（保持你 [start, end) 半开区间设计）
+                "line_start": base_line_start + code_block_start_idx,
+                "line_end": base_line_start + code_block_start_idx + len(current_lines),
+                "block_type": "code",
+                "code_chunk_index": chunk_index,
+                "code_total_chunks": chunk_index + 1,  # 临时，后续可优化为真实总数
+                "is_code_split": True,
+                "relative_line_start": rel_start,
+                "relative_line_end": rel_end,
+            }
+        )
+
+        if "code_language" in original_metadata:
+            new_metadata["code_language"] = original_metadata["code_language"]
+
+        return TextNode(
+            text=final_text,
+            metadata=new_metadata,
+        )
+
     def _handle_code(self, node):
-        # 暂不拆 code，避免破坏语义
-        return [node], False
+        """
+        处理超长代码块：
+        - 超过 chunk_size * 1.5 时才拆分
+        - 按行累加，超过 chunk_size 时切分（无 overlap）
+        - 在 chunk 正文开头注入相对行号信息
+        - 更新文档绝对行号 line_start / line_end
+        """
+        original_text = (
+            node.get_content() if hasattr(node, "get_content") else node.text
+        )
+        if not original_text or not original_text.strip():
+            return [node], False
+
+        # 如果不算太长，直接返回原 node
+        if len(original_text) <= global_chunk_size * 1.5:
+            return [node], False
+
+        original_metadata = copy.deepcopy(node.metadata)
+        base_line_start = original_metadata.get("line_start", 0)  # 文档绝对起始行
+        code_lines = original_text.splitlines(keepends=True)  # 保留换行
+
+        result_nodes = []
+        current_lines = []
+        current_char_count = 0
+        chunk_index = 0
+
+        for i, line in enumerate(code_lines):
+            tentative_count = current_char_count + len(line)
+
+            # 加入这一行会超长 → 先保存当前 chunk
+            if current_lines and tentative_count > global_chunk_size:
+                new_node = self._create_code_chunk_node(
+                    current_lines=current_lines,
+                    chunk_index=chunk_index,
+                    total_code_lines=len(code_lines),
+                    base_line_start=base_line_start,
+                    original_metadata=original_metadata,
+                    code_block_start_idx=i
+                    - len(current_lines),  # 该chunk在代码块内的起始索引（0-based）
+                )
+                result_nodes.append(new_node)
+
+                current_lines = []
+                current_char_count = 0
+                chunk_index += 1
+
+            current_lines.append(line)
+            current_char_count += len(line)
+
+        # 处理最后一个 chunk
+        if current_lines:
+            new_node = self._create_code_chunk_node(
+                current_lines=current_lines,
+                chunk_index=chunk_index,
+                total_code_lines=len(code_lines),
+                base_line_start=base_line_start,
+                original_metadata=original_metadata,
+                code_block_start_idx=len(code_lines) - len(current_lines),
+            )
+            result_nodes.append(new_node)
+
+        return result_nodes, True
 
     def _handle_math(self, node):
         return [node], False
