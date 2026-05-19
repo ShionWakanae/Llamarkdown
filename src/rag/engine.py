@@ -6,9 +6,8 @@ import time
 from enum import Enum
 from rich import print
 from transformers.utils import logging
-from llama_index.core.base.llms.types import (
-    CompletionResponse,
-)
+from llama_index.core.base.llms.types import CompletionResponse
+from textwrap import dedent
 from llama_index.postprocessor.flag_embedding_reranker import FlagEmbeddingReranker
 from llama_index.core.retrievers import QueryFusionRetriever
 from llama_index.retrievers.bm25 import BM25Retriever
@@ -194,96 +193,95 @@ class QuestionNavigator:
             }
 
         # llm analyze
-        prompt = f"""
-请分析用户问题。
+        prompt = dedent(f"""\
+            请分析用户问题。
 
-目标：
-1. 提取真正用于知识检索的关键词(retrieval_query),多关键词用空格分割。
-2. 剥离输出格式要求(presentation_intent),形成简短的英文描述。
-3. 剥离语气词。
-4. 保留用户真实业务问题。
+            目标：
+            1. 提取真正用于知识检索的关键词(retrieval_query),多关键词用空格分割。
+            2. 剥离输出格式要求(presentation_intent),形成简短的英文描述。
+            3. 剥离语气词。
+            4. 保留用户真实业务问题。
 
-返回JSON。
+            返回JSON。
 
-你需要判断用户输入属于哪种类型：
+            你需要判断用户输入属于哪种类型：
 
-- RAG
-  用户在询问知识、文档、技术内容，需要检索资料回答。
+            - RAG
+            用户在询问知识、文档、技术内容，需要检索资料回答。
 
-- CHAT
-  普通聊天、问候、感谢、闲聊。
+            - CHAT
+            普通聊天、问候、感谢、闲聊。
 
-- INVALID
-  无意义输入、乱码、极短无上下文内容。
+            - INVALID
+            无意义输入、乱码、极短无上下文内容。
 
-如果是 RAG：
-必须生成 retrieval_query。
+            如果是 RAG：
+            必须生成 retrieval_query。
 
-如果不是 RAG：
-retrieval_query 留空。
+            如果不是 RAG：
+            retrieval_query 留空。
 
-只返回JSON。
+            只返回JSON。
 
-格式：
+            格式：
+            {{
+                "question_type": "RAG | CHAT | INVALID",
+                "retrieval_query": "...",
+                "presentation_intent": "...",
+                "user_intent": "..."
+            }}
 
-{{
-    "question_type": "RAG | CHAT | INVALID",
-    "retrieval_query": "...",
-    "presentation_intent": "...",
-    "user_intent": "..."
-}}
+            示例：
 
-示例：
+            用户：
+            Windows平台对比Linux平台，用表格展示
 
-用户：
-Windows平台对比Linux平台，用表格展示
+            返回：
+            {{
+                "question_type": "RAG",
+                "retrieval_query": "Windows平台 Linux平台 对比",
+                "presentation_intent": "table",
+                "user_intent": "平台差异对比"
+            }}
 
-返回：
-{{
-    "question_type": "RAG",
-    "retrieval_query": "Windows平台 Linux平台 对比",
-    "presentation_intent": "table",
-    "user_intent": "平台差异对比"
-}}
+            用户：
+            请详细介绍HSS数据解析流程
 
-用户：
-请详细介绍HSS数据解析流程
+            返回：
+            {{
+                "question_type": "RAG",
+                "retrieval_query": "HSS 数据解析 流程",
+                "presentation_intent": "detailed",
+                "user_intent": "介绍数据解析流程"
+            }}
 
-返回：
-{{
-    "question_type": "RAG",
-    "retrieval_query": "HSS 数据解析 流程",
-    "presentation_intent": "detailed",
-    "user_intent": "介绍数据解析流程"
-}}
+            用户:
+            你好
 
-用户:
-你好
+            输出:
+            {{
+                "question_type": "CHAT",
+                "retrieval_query": "",
+                "presentation_intent": "",
+                "user_intent": "打招呼"
+            }}
 
-输出:
-{{
-    "question_type": "CHAT",
-    "retrieval_query": "",
-    "presentation_intent": "",
-    "user_intent": "打招呼"
-}}
+            用户:
+            ???
 
-用户:
-???
+            输出:
+            {{
+                "question_type": "INVALID",
+                ...
+            }}
 
-输出:
-{{
-    "question_type": "INVALID",
-    ...
-}}
+            只返回JSON对象。
+            不要使用markdown代码块。
+            现在分析：
 
-只返回JSON对象。
-不要使用markdown代码块。
-现在分析：
-
-用户：
-{question}
-        """
+            用户：
+            {question}
+        """)
 
         text = None
         try:
@@ -919,49 +917,48 @@ class RagEngine:
             context_parts.append(text)
 
         context = "\n\n".join(context_parts)
-
         # build final prompt
-        final_prompt = f"""
-你是一个企业知识库问答助手，请回答用户问题。
+        final_prompt = dedent(f"""\
+            你是一个企业知识库问答助手，请回答用户问题。
 
-规则：
-1. 优先依据提供的上下文回答
-2. 如果上下文没有明确答案，直接说`不知道。`
-3. 如果无明确答案但仍需提醒用户，需先说`不知道。`后再开始提醒
-4. 不要编造事实
-5. 不要在回答中提及用户的输出要求
-5. 回答尽量准确、简洁
-6. 直接回答内容，不要在回答前说类似`根据企业资料`的内容
-7. 尽量用有层次结构的列表方式输出并列的内容
-8. 如果文档存在歧义，指出歧义
-10. 如果发现上下文有语义被截断的可能，提示用户`以参考文档为准！`
+            规则：
+            1. 优先依据提供的上下文回答
+            2. 如果上下文没有明确答案，直接说`不知道。`
+            3. 如果无明确答案但仍需提醒用户，需先说`不知道。`后再开始提醒
+            4. 不要编造事实
+            5. 不要在回答中提及用户的输出要求
+            5. 回答尽量准确、简洁
+            6. 直接回答内容，不要在回答前说类似`根据企业资料`的内容
+            7. 尽量用有层次结构的列表方式输出并列的内容
+            8. 如果文档存在歧义，指出歧义
+            10. 如果发现上下文有语义被截断的可能，提示用户`以参考文档为准！`
 
----
-用户真实意图：
+            ---
+            用户真实意图：
 
-`{user_intent}`
+            `{user_intent}`
 
----
-输出要求：
+            ---
+            输出要求：
 
-`{presentation_intent}`
+            `{presentation_intent}`
 
----
-用户问题：
+            ---
+            用户问题：
 
-`{question}`
+            `{question}`
 
----
-企业资料：
+            ---
+            企业资料：
 
-{context}
+            {context}
 
----
-严格依据资料回答。
-禁止使用外部知识。
-禁止寒暄。
-直接输出结论。
-"""
+            ---
+            严格依据资料回答。
+            禁止使用外部知识。
+            禁止寒暄。
+            直接输出结论。
+            """)
 
         # final generate
         log(f"Answer starting, input prompt len: {len(final_prompt)}")
