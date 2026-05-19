@@ -1012,14 +1012,18 @@ def main():
                         src = usage["rewrite"]["source"]
                         model = usage["rewrite"]["model"]
                         log(
-                            f"Rewrite tokens in: {usage['rewrite']['prompt_tokens']:>5}, out:{usage['rewrite']['completion_tokens']:>5}, from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
+                            f"Rewrite tokens in: {usage['rewrite']['prompt_tokens']:>5}, out:{usage['rewrite']['completion_tokens']:>5}, "
+                            + f"from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
                             False,
                         )
                         if answer_source == "llm":
                             src = usage["answer"]["source"]
                             answer_model = usage["answer"]["model"]
                             log(
-                                f"Answers tokens in: {usage['answer']['prompt_tokens']:>5}, out:{usage['answer']['completion_tokens']:>5}, from: {answer_model if src == 'llm' else f'{answer_model} [bold red]{src}[/]!!!'} <{round(int(usage['answer']['completion_tokens']) / streaming_s, 2)} tokens/s>",
+                                f"Answers tokens in: {usage['answer']['prompt_tokens']:>5}, "
+                                + f"out:{usage['answer']['completion_tokens']:>5}, "
+                                + f"from: {answer_model if src == 'llm' else f'{answer_model} [bold red]{src}[/]!!!'} "
+                                + f" <{round(int(usage['answer']['completion_tokens']) / streaming_s, 2)} tokens/s>",
                                 False,
                             )
                             log(
