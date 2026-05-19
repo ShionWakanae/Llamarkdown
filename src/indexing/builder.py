@@ -523,13 +523,14 @@ class IndexBuilder:
                     j += 1
                     continue
 
-                next_parent_header = parent_header(nxt.metadata.get("header_path", ""))
+                next_header = nxt.metadata.get("header_path", "")
+                next_parent_header = parent_header(next_header)
 
                 # only merge under same parent section
                 # or next is current's child
                 if (
                     current_parent_header != next_parent_header
-                    and current_header != next_parent_header
+                    and not next_header.startswith(current_header)
                 ):
                     break
 
