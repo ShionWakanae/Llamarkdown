@@ -33,7 +33,7 @@ class MyLLM(CustomLLM):
             default_kwargs = {
                 "temperature": 0.0,
                 # shutdown thinking for all providers
-                "reasoning_effort": "low",
+                "reasoning_effort": "none",
                 "extra_body": {
                     **extra_body,
                 },
