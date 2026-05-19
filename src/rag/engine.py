@@ -130,6 +130,7 @@ def stream_with_usage(llm, prompt, usage_collector: UsageCollector, engine):
                     last_model = model
     finally:
         model = last_model or engine._get_model_name(llm)
+        model = model.replace(".gguf", "")
         if usage_holder:
             usage_collector.set_answer(
                 usage_holder,
@@ -400,16 +401,16 @@ class RagEngine:
         # OpenAI compatible object
         model = getattr(raw, "model", None)
         if model:
-            return model
+            return model.replace(".gguf", "")
 
         # dict raw
         if isinstance(raw, dict):
             model = raw.get("model")
             if model:
-                return model
+                return model.replace(".gguf", "")
 
         # fallback
-        return self._get_model_name(llm)
+        return self._get_model_name(llm).replace(".gguf", "")
 
     def _get_model_name(self, llm):
         return (
