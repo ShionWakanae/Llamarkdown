@@ -12,6 +12,7 @@ from docling_core.types.doc import PictureItem
 from utils.settings import settings, REF_MD_DIR, ORI_PDF_DIR
 from utils.logger import logger
 import subprocess
+import argparse
 
 log = logger.log
 ref_md_path = (Path(settings.app_doc_path) / REF_MD_DIR).resolve()
@@ -301,8 +302,6 @@ class DoclingDirectoryConverter:
 
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(description="Recursive Docling API Converter")
     parser.add_argument(
         "input_dir",
