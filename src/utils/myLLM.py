@@ -57,8 +57,8 @@ class MyLLM(CustomLLM):
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
             model_name=self.model_name,
-            context_window=18000,
-            num_output=4096,
+            context_window=8192,
+            num_output=5120,
             is_chat_model=True,
         )
 

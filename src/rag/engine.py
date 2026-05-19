@@ -690,6 +690,7 @@ class RagEngine:
         self.reranker = FlagEmbeddingReranker(
             model=settings.reranker_model,
             top_n=settings.retrieval_rerank_top_n_max,
+            use_fp16=True,
         )
 
     def query(
