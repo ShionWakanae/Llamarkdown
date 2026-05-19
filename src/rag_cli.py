@@ -220,12 +220,7 @@ if __name__ == "__main__":
                 print(
                     ">>>-------------------------------------------------------------------------------<<<"
                 )
-                print(
-                    ">>> score:(",
-                    metadata.get("score", 0),
-                    ") metadata：",
-                    ordered_metadata(metadata),
-                )
+                print(">>> score:(", score, ") metadata：", ordered_metadata(metadata))
                 builtins.print(answer.replace("\n\n", "\n"))
                 print()
 
