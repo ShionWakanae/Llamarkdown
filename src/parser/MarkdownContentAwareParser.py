@@ -22,7 +22,7 @@ class MarkdownContentAwareParser:
     - Keep line_start / line_end updated
     """
 
-    CODE_FENCE_RE = re.compile(r"^(```|~~~)")
+    CODE_FENCE_RE = re.compile(r"^[ \t]{0,3}(```+|~~~+)")
     TABLE_RE = re.compile(r"^\s*\|.*\|\s*$")
     MATH_BLOCK_RE = re.compile(r"^\s*\$\$\s*$")
     OCR_START_RE = re.compile(r"^\*\[Image OCR\]\*\s*$")
@@ -238,18 +238,26 @@ class MarkdownContentAwareParser:
             #
             # code block
             #
-            if self.CODE_FENCE_RE.match(line):
+            if match := self.CODE_FENCE_RE.match(line):
                 start = i
+                fence_match = match.group(1)  # 如 ``` 或 ~~~
+                fence_char = fence_match[0]  # ` 或 ~
+                fence_len = len(fence_match)
 
-                fence = line[:3]
+                remaining = line[match.end() :].strip()
+                language = remaining.split()[0] if remaining else ""
 
                 i += 1
-
                 while i < len(lines):
-                    if lines[i].startswith(fence):
-                        i += 1
-                        break
-
+                    close_match = self.CODE_FENCE_RE.match(lines[i])
+                    if close_match:
+                        close_fence = close_match.group(1)
+                        if (
+                            close_fence[0] == fence_char
+                            and len(close_fence) >= fence_len
+                        ):
+                            i += 1
+                            break
                     i += 1
 
                 blocks.append(
@@ -258,6 +266,7 @@ class MarkdownContentAwareParser:
                         "text": "\n".join(lines[start:i]),
                         "start_line": start,
                         "end_line": i - 1,
+                        "code_language": language,
                     }
                 )
 
