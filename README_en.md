@@ -99,6 +99,8 @@ pip install -r requirements.txt
 
 💡 It is optional, but recommended, to install [LibreOffice](https://www.libreoffice.org/download/download-libreoffice/) and add it to the system PATH.
 
+💡 If you want to use local LLMs, please refer to the [LLMs selection guide](./doc/LLMs.md).
+
 ---
 
 # ⭐ Usage

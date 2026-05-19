@@ -78,7 +78,10 @@
 3. 安装CUDA依赖：`pip install -r requirements_cuda.txt`  (如果使用CUDA加速)
 4. 安装依赖：`pip install -r requirements.txt`
 
+
 💡可选但最好安装[Libre Office](https://zh-cn.libreoffice.org/download/libreoffice/)程序，并加入系统路径。
+
+💡如果你希望使用本地LLM，可以参考[关于语言模型的选择](./doc/LLMs.md)。
 
 ---
 
