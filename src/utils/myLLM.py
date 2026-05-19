@@ -29,23 +29,36 @@ class MyLLM(CustomLLM):
         # provider-specific params
         extra_body = kwargs.pop("extra_body", {})
         # default kwargs
-        default_kwargs = {
-            "temperature": 0.0,
-            # shutdown thinking for all providers
-            "extra_body": {
-                "chat_template_kwargs": {
+        if "gpt-oss" in model.lower():
+            default_kwargs = {
+                "temperature": 0.0,
+                # shutdown thinking for all providers
+                "reasoning_effort": "low",
+                "extra_body": {
+                    **extra_body,
+                },
+                # allow user override
+                **kwargs,
+            }
+
+        else:
+            default_kwargs = {
+                "temperature": 0.0,
+                # shutdown thinking for all providers
+                "extra_body": {
+                    "chat_template_kwargs": {
+                        "enable_thinking": False,
+                    },
                     "enable_thinking": False,
+                    "thinking": {
+                        "type": "disabled",
+                    },
+                    # user extra params
+                    **extra_body,
                 },
-                "enable_thinking": False,
-                "thinking": {
-                    "type": "disabled",
-                },
-                # user extra params
-                **extra_body,
-            },
-            # allow user override
-            **kwargs,
-        }
+                # allow user override
+                **kwargs,
+            }
         super().__init__(
             model_name=model,
             system_prompt=system_prompt,
