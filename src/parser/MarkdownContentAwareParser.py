@@ -115,7 +115,7 @@ class MarkdownContentAwareParser:
             new_metadata = copy.deepcopy(metadata)
             new_metadata["line_start"] = current_start
             new_metadata["line_end"] = current_end
-            new_metadata["block_type"] = "text"
+            new_metadata["block_types"] = ["text"]
             result_nodes.append(
                 TextNode(
                     text=content,
@@ -129,14 +129,14 @@ class MarkdownContentAwareParser:
 
         for block in blocks:
             block_text = block["text"]
-            block_type = block["type"]
+            tmp_type = block["type"]
             abs_start = base_line_start + block["start_line"]
             abs_end = base_line_start + block["end_line"] + 1
 
             #
             # structured block
             #
-            if block_type in {
+            if tmp_type in {
                 "code",
                 "table",
                 "math",
@@ -151,7 +151,7 @@ class MarkdownContentAwareParser:
                 structured_metadata = copy.deepcopy(metadata)
                 structured_metadata["line_start"] = abs_start
                 structured_metadata["line_end"] = abs_end
-                structured_metadata["block_type"] = block_type
+                structured_metadata["block_types"] = [tmp_type]
 
                 result_nodes.append(
                     TextNode(
@@ -263,10 +263,12 @@ class MarkdownContentAwareParser:
                 blocks.append(
                     {
                         "type": "code",
-                        "text": "\n".join(lines[start:i]),
+                        "text": "\n".join(lines[start + 1 : i - 1]),
                         "start_line": start,
                         "end_line": i - 1,
                         "code_language": language,
+                        "fence_char": fence_char,
+                        "fence_len": fence_len,
                     }
                 )
 

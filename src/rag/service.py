@@ -264,7 +264,7 @@ class RagService:
                     "header_path": metadata.get("header_path", ""),
                     "line_start": metadata.get("line_start"),
                     "line_end": metadata.get("line_end"),
-                    "block_type": metadata.get("block_type"),
+                    "block_types": metadata.get("block_types"),
                     "text_length": metadata.get("text_length"),
                 }
             )

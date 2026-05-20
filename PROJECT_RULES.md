@@ -532,7 +532,7 @@ Metadata属于：
 - header_path
 - line_start
 - line_end
-- block_type
+- block_types
 
 可能扩展：
 
@@ -675,7 +675,7 @@ RAG不是：
 - header_path
 - line_start
 - line_end
-- block_type
+- block_types
 
 原因：
 
@@ -1133,7 +1133,7 @@ source_nodes属于核心信息。
 - header_path
 - score
 - line range
-- block_type
+- block_types
 
 ---
 

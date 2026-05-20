@@ -217,9 +217,15 @@ class IndexBuilder:
         base_line_start: int,
         original_metadata: dict,
         code_block_start_idx: int,  # 该chunk在当前代码块内的起始行索引（0-based）
+        is_split: bool = True,
     ):
         """创建单个拆分后的代码 chunk"""
         chunk_text = "".join(current_lines)
+        fence_char = original_metadata.get("fence_char", "`")
+        fence_len = original_metadata.get("fence_len", 3)
+        fence = fence_char * fence_len
+        language = original_metadata.get("code_language", "")
+        language_suffix = language if language else ""
 
         # 计算相对于代码块的行号（从 1 开始计数）
         rel_start = code_block_start_idx + 1
@@ -229,7 +235,12 @@ class IndexBuilder:
         line_info = (
             f"【代码块 第 {rel_start}-{rel_end} 行，共 {total_code_lines} 行】\n"
         )
-        final_text = line_info + chunk_text
+        final_text = (
+            line_info
+            + f"{fence}{language_suffix}\n"
+            + chunk_text.rstrip("\n")
+            + f"\n{fence}"
+        )
 
         new_metadata = copy.deepcopy(original_metadata)
         new_metadata.update(
@@ -237,10 +248,10 @@ class IndexBuilder:
                 # 文档绝对行号（保持你 [start, end) 半开区间设计）
                 "line_start": base_line_start + code_block_start_idx,
                 "line_end": base_line_start + code_block_start_idx + len(current_lines),
-                "block_type": "code",
+                "block_types": ["code"],
                 "code_chunk_index": chunk_index,
                 "code_total_chunks": chunk_index + 1,  # 临时，后续可优化为真实总数
-                "is_code_split": True,
+                "is_code_split": is_split,
                 "relative_line_start": rel_start,
                 "relative_line_end": rel_end,
             }
@@ -268,10 +279,6 @@ class IndexBuilder:
         if not original_text or not original_text.strip():
             return [node], False
 
-        # 如果不算太长，直接返回原 node
-        if len(original_text) <= global_chunk_size * 1.5:
-            return [node], False
-
         original_metadata = copy.deepcopy(node.metadata)
         base_line_start = original_metadata.get("line_start", 0)  # 文档绝对起始行
         code_lines = original_text.splitlines(keepends=True)  # 保留换行
@@ -280,6 +287,20 @@ class IndexBuilder:
         current_lines = []
         current_char_count = 0
         chunk_index = 0
+
+        # 如果不算太长，包装原node内容并返回
+        if len(original_text) <= global_chunk_size * 1.5:
+            new_node = self._create_code_chunk_node(
+                current_lines=code_lines,
+                chunk_index=0,
+                total_code_lines=len(code_lines),
+                base_line_start=base_line_start,
+                original_metadata=original_metadata,
+                code_block_start_idx=0,
+                is_split=False,
+            )
+            result_nodes.append(new_node)
+            return result_nodes, False
 
         for i, line in enumerate(code_lines):
             tentative_count = current_char_count + len(line)
@@ -443,19 +464,20 @@ class IndexBuilder:
                 )
             )
 
-            # small section
-            if len(node.text) < global_chunk_size + global_chunk_overlap:
-                append_candidate(node.text, node.metadata, header)
-
-            # large section
-            else:
-                # Large table split
-                block_type = node.metadata.get("block_type", "text")
-                sub_nodes, did_split = self._dispatch_by_block_type(node, block_type)
-                if did_split:
-                    split_count += 1
-                for sub_node in sub_nodes:
-                    append_candidate(sub_node.text, sub_node.metadata, header)
+            # 所有块分类处理，是否拆分开，取决于内部逻辑
+            block_types = node.metadata.get(
+                "block_types",
+                ["text"],
+            )
+            if len(block_types) != 1:
+                raise ValueError(
+                    f"Unexpected block_types before dispatch: {block_types}"
+                )
+            sub_nodes, did_split = self._dispatch_by_block_type(node, block_types[0])
+            if did_split:
+                split_count += 1
+            for sub_node in sub_nodes:
+                append_candidate(sub_node.text, sub_node.metadata, header)
 
         if self.debug_mode:
             print(f"== Large nodes split:{split_count}")
@@ -513,41 +535,46 @@ class IndexBuilder:
             #
             j = i + 1
 
-            while len(merged_text) < (global_chunk_size * 1.5) and j < len(
-                candidate_nodes
-            ):
-                nxt = candidate_nodes[j]
-                if current.metadata.get("file_path") != nxt.metadata.get("file_path"):
-                    break
-                if len(nxt.text.strip()) < 1:
-                    j += 1
-                    continue
-
-                next_header = nxt.metadata.get("header_path", "")
-                next_parent_header = parent_header(next_header)
-
-                # only merge under same parent section
-                # or next is current's child
-                if (
-                    current_parent_header != next_parent_header
-                    and not next_header.startswith(current_header)
+            if len(merged_text) < global_chunk_size * 0.75:
+                merged_block_types = set(current.metadata.get("block_types", ["text"]))
+                while len(merged_text) < (global_chunk_size * 1.5) and j < len(
+                    candidate_nodes
                 ):
-                    break
+                    nxt = candidate_nodes[j]
+                    if current.metadata.get("file_path") != nxt.metadata.get(
+                        "file_path"
+                    ):
+                        break
+                    if len(nxt.text.strip()) < 1:
+                        j += 1
+                        continue
 
-                candidate_text = merged_text + "\n\n" + nxt.text
+                    next_header = nxt.metadata.get("header_path", "")
+                    next_parent_header = parent_header(next_header)
 
-                # stop if exceeding max chunk size
-                if len(candidate_text) > (global_chunk_size * 1.5):
-                    break
+                    # only merge under same parent section
+                    # or next is current's child
+                    if (
+                        current_parent_header != next_parent_header
+                        and not next_header.startswith(current_header)
+                    ):
+                        break
 
-                merged_text = candidate_text
-                merged_nodes.append(nxt)
+                    candidate_text = merged_text + "\n\n" + nxt.text
+                    merged_block_types.update(nxt.metadata.get("block_types", ["text"]))
 
-                j += 1
+                    # stop if exceeding max chunk size
+                    if len(candidate_text) > (global_chunk_size * 1.5):
+                        break
+
+                    merged_text = candidate_text
+                    merged_nodes.append(nxt)
+
+                    j += 1
 
             # metadata based on merged range
             base_meta = copy.deepcopy(current.metadata)
-
+            base_meta["block_types"] = sorted(merged_block_types)
             # update line range
             if len(merged_nodes) > 1:
                 last_node = merged_nodes[-1]

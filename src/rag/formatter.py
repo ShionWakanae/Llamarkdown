@@ -132,7 +132,7 @@ def build_debug_html(debug_data):
 
             <div>
                 block:
-                {item.get("block_type")}
+                {item.get("block_types")}
             </div>
 
             <div style="margin-top:4px; color:#94a3b8;">

@@ -32,9 +32,9 @@ def print_metadata_stats(final_nodes):
         if "topic" in meta:
             stats["topic"][meta["topic"]] += 1
 
-        # block_type : text | image | table | code | other
-        if "block_type" in meta:
-            stats["block_type"][meta["block_type"]] += 1
+        # block_types : text | image | table | code | other
+        if "block_types" in meta:
+            stats["block_types"][meta["block_types"]] += 1
 
         # boolean metadata
         for key in [
@@ -153,6 +153,8 @@ if __name__ == "__main__":
             meta = node.metadata
             if "merged_headers" in meta and isinstance(meta["merged_headers"], list):
                 meta["merged_headers"] = " + ".join(meta["merged_headers"])
+            if "block_types" in meta and isinstance(meta["block_types"], list):
+                meta["block_types"] = "|".join(meta["block_types"])
 
         # debug part
         if debug_mode:

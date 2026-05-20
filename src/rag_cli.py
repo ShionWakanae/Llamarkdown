@@ -185,7 +185,7 @@ if __name__ == "__main__":
                 "line_start",
                 "line_end",
                 "text_length",
-                "block_type",
+                "block_types",
                 "table_row_start",
                 "table_row_end",
                 "merged_chunks",
