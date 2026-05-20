@@ -80,6 +80,43 @@ class IndexBuilder:
         flush(len(lines))
         return result
 
+    def _create_table_chunk_node(
+        self,
+        fixed_lines: list,
+        current_rows: list,
+        current_start_idx: int,
+        end_idx: int,
+        total_rows: int,
+        base_line_start: int,
+        metadata: dict,
+    ):
+        rel_start = current_start_idx + 1
+        rel_end = end_idx
+        line_info = f"【表格 第 {rel_start}-{rel_end} 行，共 {total_rows} 行】\n"
+
+        chunk_lines = [
+            line_info,
+            *fixed_lines,
+            *current_rows,
+        ]
+
+        chunk_text = "\n".join(chunk_lines)
+        first_data_line = len(fixed_lines) + current_start_idx
+        last_data_line = len(fixed_lines) + end_idx - 1
+        new_metadata = copy.deepcopy(metadata)
+        new_metadata["line_start"] = base_line_start + first_data_line
+        new_metadata["line_end"] = base_line_start + last_data_line + 1
+        new_metadata["table_row_start"] = current_start_idx
+        new_metadata["table_row_end"] = end_idx - 1
+        new_metadata["relative_row_start"] = rel_start
+        new_metadata["relative_row_end"] = rel_end
+        new_metadata["block_types"] = ["table"]
+
+        return TextNode(
+            text=chunk_text,
+            metadata=new_metadata,
+        )
+
     def _split_table_node(
         self,
         node,
@@ -153,26 +190,16 @@ class IndexBuilder:
             if not current_rows:
                 return
 
-            chunk_lines = [
-                *fixed_lines,
-                *current_rows,
-            ]
-
-            chunk_text = "\n".join(chunk_lines)
-            first_data_line = separator_idx + 1 + current_start_idx
-            last_data_line = separator_idx + end_idx
-            new_metadata = copy.deepcopy(metadata)
-            new_metadata["line_start"] = base_line_start + first_data_line
-            new_metadata["line_end"] = base_line_start + last_data_line + 1
-            new_metadata["table_row_start"] = current_start_idx
-            new_metadata["table_row_end"] = end_idx - 1
-
-            result_nodes.append(
-                TextNode(
-                    text=chunk_text,
-                    metadata=new_metadata,
-                )
+            new_node = self._create_table_chunk_node(
+                fixed_lines=fixed_lines,
+                current_rows=current_rows,
+                current_start_idx=current_start_idx,
+                end_idx=end_idx,
+                total_rows=len(data_lines),
+                base_line_start=base_line_start,
+                metadata=metadata,
             )
+            result_nodes.append(new_node)
             current_rows = []
 
         # dynamic split
@@ -198,10 +225,8 @@ class IndexBuilder:
         return result_nodes
 
     def _handle_table(self, node):
-        if len(node.text) > global_chunk_size:
-            sub_nodes = self._split_table_node(node, global_chunk_size)
-            return sub_nodes, len(sub_nodes) > 1
-        return [node], False
+        sub_nodes = self._split_table_node(node, global_chunk_size)
+        return sub_nodes, len(sub_nodes) > 1
 
     def _handle_text(self, node):
         if len(node.text) > global_chunk_size:
