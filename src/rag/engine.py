@@ -735,6 +735,7 @@ class RagEngine:
                 self.need_cache = False
             if not presentation_intent:
                 presentation_intent = "intro"
+                user_intent = "获取信息"
 
             log(f"[Rewrite] 意图是: {user_intent} ({presentation_intent})")
             log(f"[Rewrite] 关键词: {retrieval_query}", False)

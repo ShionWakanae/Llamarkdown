@@ -431,12 +431,12 @@ def main():
                     """
                     flex: 1;
                     overflow-y: auto;
-                    background: #ddc;
+                    background: #eed;
                     border: 1px solid #d0d0d0;
                     border-radius: 8px;
                     padding: 8px;
                     color-scheme: light;
-                    scrollbar-color: #999 #ddc;
+                    scrollbar-color: #999 #eed;
                     scrollbar-width: auto;
                     """
                 )
