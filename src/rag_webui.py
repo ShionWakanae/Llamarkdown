@@ -835,7 +835,7 @@ def main():
                     switch_debug.set_value(False)
                     switch_debug.set_enabled(False)
                     print("=" * 60)
-                    log(f"Question: {message}", False)
+                    log(f"[Question] {message}", False)
                     # reset status
                     debug_panel.content = """
                     <div class="debug-panel">
@@ -930,7 +930,7 @@ def main():
                         if event["type"] == "token":
                             got_answer = True
                             if not first_token:
-                                log("Streaming...")
+                                log("[WebUI] Streaming...")
                                 streaming_start = time.perf_counter()
                                 partial_text = ""
                                 first_token = True
@@ -1000,7 +1000,7 @@ def main():
                         (time.perf_counter() - streaming_start),
                         2,
                     )
-                    log("Answer completed")
+                    log("[WebUI] Answer completed")
                     log("----------------")
                     log(
                         f"Retrieval: {timing.get('query_ms', 0)} ms, Answers: {timing.get('llm_ms', 0)} ms, Total: {timing.get('total_ms', 0)} ms",
@@ -1013,7 +1013,7 @@ def main():
                         model = usage["rewrite"]["model"]
                         log(
                             f"Rewrite tokens in: {usage['rewrite']['prompt_tokens']:>5}, out:{usage['rewrite']['completion_tokens']:>5}, "
-                            + f"from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
+                            + f"from: <{model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}>",
                             False,
                         )
                         if answer_source == "llm":
@@ -1022,7 +1022,7 @@ def main():
                             log(
                                 f"Answers tokens in: {usage['answer']['prompt_tokens']:>5}, "
                                 + f"out:{usage['answer']['completion_tokens']:>5}, "
-                                + f"from: {answer_model if src == 'llm' else f'{answer_model} [bold red]{src}[/]!!!'} "
+                                + f"from: <{answer_model if src == 'llm' else f'{answer_model} [bold red]{src}[/]!!!'}> "
                                 + f" <{round(int(usage['answer']['completion_tokens']) / streaming_s, 2)} tokens/s>",
                                 False,
                             )

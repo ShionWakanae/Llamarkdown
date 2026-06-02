@@ -92,7 +92,7 @@ class AnswerCache:
         self.knowledge_hash = self.build_knowledge_hash()
         deleted = self.invalidate_old_cache()
         cache_delete_msg = "" if deleted == 0 else f", {deleted} old entries removed"
-        log(f"[RAG] Cache ready{cache_delete_msg}")
+        log(f"[Cache] ready{cache_delete_msg}")
 
     # build cache query
     def build_cache_query(

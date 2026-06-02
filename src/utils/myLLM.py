@@ -10,6 +10,7 @@ from llama_index.core.llms import (
     LLMMetadata,
 )
 from pydantic import Field, PrivateAttr
+import traceback
 
 
 class MyLLM(CustomLLM):
@@ -165,19 +166,23 @@ class MyLLM(CustomLLM):
         stream = self._client.chat.completions.create(**final_kwargs)
 
         def gen() -> Generator[CompletionResponse, None, None]:
-            for chunk in stream:
-                delta = ""
-                try:
-                    if chunk.choices:
-                        delta = chunk.choices[0].delta.content or ""
-
-                except Exception:
+            try:
+                for chunk in stream:
                     delta = ""
+                    try:
+                        if chunk.choices:
+                            delta = chunk.choices[0].delta.content or ""
 
-                yield CompletionResponse(
-                    text=delta,
-                    delta=delta,
-                    raw=chunk,
-                )
+                    except Exception:
+                        delta = ""
+
+                    yield CompletionResponse(
+                        text=delta,
+                        delta=delta,
+                        raw=chunk,
+                    )
+            except Exception as e:
+                print("STREAM ERROR:", e)
+                print(traceback.format_exc())
 
         return gen()

@@ -55,7 +55,7 @@ if __name__ == "__main__":
     else:
         query_mode = QueryMode.NORMAL
 
-    log(f"Question: [bold bright_yellow]{quest_str}[/]", False)
+    log(f"[Question] [bold bright_yellow]{quest_str}[/]", False)
 
     debug_data = None
     answer_source = ""
@@ -73,7 +73,7 @@ if __name__ == "__main__":
                 chunk = event["text"]
                 if chunk:
                     if first:
-                        log("Streaming...")
+                        log("[CLI] Streaming...")
                         streaming_start = time.perf_counter()
                         spinner.stop()
                         live.stop()
@@ -133,7 +133,8 @@ if __name__ == "__main__":
         (time.perf_counter() - streaming_start),
         2,
     )
-    log("Answer completed")
+    log("[CLI] Answer completed")
+    log("----------------")
     log(
         f"Retrieval: {timing.get('query_ms', 0)} ms, Answer: {timing.get('llm_ms', 0)} ms, Total: {timing.get('total_ms', 0)} ms",
         False,
@@ -145,7 +146,7 @@ if __name__ == "__main__":
         model = usage["rewrite"]["model"]
         log(
             f"Rewrite tokens in: {usage['rewrite']['prompt_tokens']:>5}, out:{usage['rewrite']['completion_tokens']:>5}, "
-            + f"from: {model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}",
+            + f"from: <{model if src == 'llm' else f'{model} [bold red]{src}[/]!!!'}>",
             False,
         )
         if answer_source == "llm":
@@ -154,7 +155,7 @@ if __name__ == "__main__":
             log(
                 f"Answers tokens in: {usage['answer']['prompt_tokens']:>5}, "
                 + f"out:{usage['answer']['completion_tokens']:>5}, "
-                + f"from: {answer_model if src == 'llm' else f'{answer_model} [bold red]{src}[/]!!!'} "
+                + f"from: <{answer_model if src == 'llm' else f'{answer_model} [bold red]{src}[/]!!!'}> "
                 + f" <{round(int(usage['answer']['completion_tokens']) / streaming_s, 2)} tokens/s>",
                 False,
             )

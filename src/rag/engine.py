@@ -387,12 +387,12 @@ class QuestionNavigator:
 
 class RagEngine:
     def __init__(self):
-        log(f"[RAG] Initializing...<{settings.llm_api_base}>")
+        log(f"[Engine] Initializing...<{settings.llm_api_base}>")
         self._build_pipeline()
         self.navigator = QuestionNavigator()
         self.usage = UsageCollector()
         self.need_cache = True
-        log("[RAG] Ready")
+        log("[Engine] Ready")
 
     def extract_model_name(self, response, llm):
         raw = getattr(response, "raw", None)
@@ -618,7 +618,7 @@ class RagEngine:
         return nodes
 
     def _build_pipeline(self):
-        log("[RAG] Loading storage...")
+        log("[Engine] Loading storage...")
         chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
         chroma_collection = chroma_client.get_or_create_collection("docs")
         vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
@@ -651,7 +651,7 @@ class RagEngine:
             self.all_nodes.append(node)
 
             self._index_exact_terms(node)
-        log(f"[RAG] Loaded nodes: {len(all_nodes)}")
+        log(f"[Engine] Loaded nodes: {len(all_nodes)}")
 
         # stable exact index order
         for term in self.exact_index:
@@ -704,6 +704,7 @@ class RagEngine:
             analysis = self.navigator.analyze_query(question, self)
             question_type = analysis.question_type
             if query_mode == QueryMode.NORMAL and question_type != "RAG":
+                print(analysis)
                 if question_type == "CHAT":
                     ret = "您好，我是专职的企业知识库的智能助理，您可以直接提出问题。"
                 elif question_type == "INVALID":
@@ -962,7 +963,7 @@ class RagEngine:
             """)
 
         # final generate
-        log(f"Answer starting, input prompt len: {len(final_prompt)}")
+        log(f"[Engine] Answer starting, input prompt len: {len(final_prompt)}")
         yield {
             "type": "trace",
             "stage": "回答",
