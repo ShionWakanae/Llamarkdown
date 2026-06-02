@@ -185,12 +185,10 @@ class QuestionNavigator:
         # fast classify
         fast_type = self._rule_filter(question)
         if fast_type != "RAG":
-            return {
-                "question_type": fast_type,
-                "retrieval_query": "",
-                "presentation_intent": "",
-                "user_intent": "",
-            }
+            return QueryAnalysis(
+                question_type=fast_type,
+                retrieval_query=question,
+            )
 
         # llm analyze
         prompt = dedent(f"""\
@@ -702,6 +700,9 @@ class RagEngine:
         # print(query_mode)
         if query_mode == QueryMode.NORMAL or query_mode == QueryMode.CONFIRM_RAG:
             analysis = self.navigator.analyze_query(question, self)
+            if not isinstance(analysis, QueryAnalysis):
+                print("BAD ANALYSIS:", type(analysis), analysis)
+                print(analysis)
             question_type = analysis.question_type
             if query_mode == QueryMode.NORMAL and question_type != "RAG":
                 print(analysis)
