@@ -158,6 +158,7 @@ if __name__ == "__main__":
 
         # debug part
         if debug_mode:
+            log("[DEBUG] Skip indexing...")
             Show_debug_info_and_exit(final_nodes)
 
         # 建索引
