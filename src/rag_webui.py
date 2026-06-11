@@ -708,17 +708,27 @@ def main():
                                 sent=False,
                                 name="🧠历史回复",
                             ).style("max-width: 95%;"):
-                                message_id += 1
-                                ui.html(item["answer"]).props(
-                                    f"id=assistant-msg{message_id}"
-                                ).style("width: 100%;")
-                                context.client.run_javascript(f"""
-                                if (window.MathJax) {{
-                                    MathJax.typesetPromise();
-                                    const el = document.getElementById("assistant-msg{message_id}");
-                                    MathJax.typesetPromise([el]);
-                                }}
-                                """)
+                                with ui.column().classes(
+                                    "w-full items-start mt-0 mb-0"
+                                ):
+                                    message_id += 1
+                                    # "trace": trace_message_ui.content,
+                                    with ui.expansion("执行过程").style(
+                                        "width: 100%; max-width: 100%; overflow-x: auto;"
+                                    ):
+                                        ui.html(item.get("trace", "")).style(
+                                            "width: 100%;"
+                                        )
+                                    ui.html(item["answer"]).props(
+                                        f"id=assistant-msg{message_id}"
+                                    ).style("width: 100%;")
+                                    context.client.run_javascript(f"""
+                                    if (window.MathJax) {{
+                                        MathJax.typesetPromise();
+                                        const el = document.getElementById("assistant-msg{message_id}");
+                                        MathJax.typesetPromise([el]);
+                                    }}
+                                    """)
                             if item["sources"]:
                                 with (
                                     ui.row()
@@ -874,7 +884,14 @@ def main():
                                         "facebook", size="md"
                                     ).classes("mt-0 mb-0")
                                     assistant_answer_spinner.set_visibility(False)
-
+                                    trace_expansion = ui.expansion("执行中……").style(
+                                        "width: 100%; max-width: 100%; overflow-x: auto;"
+                                    )
+                                    trace_expansion.open()
+                                    with trace_expansion:
+                                        trace_message_ui = ui.html().style(
+                                            "width: 100%;"
+                                        )
                                     rendered_html = render_markdown_html("### 思考中")
                                     nonlocal message_id
                                     message_id += 1
@@ -920,6 +937,7 @@ def main():
 
                     # consume
                     accumulated = ""
+                    trace_message_content = ""
                     streaming_start = time.perf_counter()
                     while True:
                         event = await asyncio.to_thread(queue.get)
@@ -948,9 +966,6 @@ def main():
                                 auto_scroll_chat(client)
 
                         elif event["type"] == "trace":
-                            if not first_trace:
-                                partial_text = "### 思考中\n\n"
-                                first_trace = True
                             trace_stage = event["stage"]
                             trace_message = event["message"]
                             trace_timing = event["timing"]
@@ -958,10 +973,13 @@ def main():
                             timing_str = (
                                 "" if not trace_timing else f"(_{trace_timing}ms_)"
                             )
-                            partial_text += f"{msg_str} {timing_str}\n\n"
-                            rendered_html = render_markdown_html(partial_text)
-                            assistant_message.content = rendered_html
+                            trace_message_content += f"{msg_str} {timing_str}\n"
+                            assistant_message.content = ""
+                            trace_message_ui.content = render_markdown_html(
+                                trace_message_content
+                            )
                             assistant_message.update()
+                            trace_message_ui.update()
                             auto_scroll_chat(client)
 
                         # sources
@@ -996,6 +1014,8 @@ def main():
 
                     if accumulated:
                         partial_text += accumulated
+                    trace_expansion.text = "执行过程"
+                    trace_expansion.close()
                     streaming_s = round(
                         (time.perf_counter() - streaming_start),
                         2,
@@ -1086,7 +1106,8 @@ def main():
                     history_item = {
                         "question": message,
                         "qtime": qtime,
-                        "answer": rendered_html + footer,
+                        "trace": trace_message_ui.content,
+                        "answer": assistant_message.content,
                         "atime": atime,
                         "confirm": query_mode == QueryMode.CONFIRM_RAG,
                         "sources": [],
