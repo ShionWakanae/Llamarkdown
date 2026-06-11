@@ -107,7 +107,16 @@ class RagService:
             dict_result = dict_engine.query(question)
             if dict_result:
                 md = dict_engine.format_markdown(dict_result["entries"])
-
+                total_ms = round(
+                    (time.perf_counter() - total_start) * 1000,
+                    2,
+                )
+                yield {
+                    "type": "trace",
+                    "stage": "字典",
+                    "message": ("命中关键字,我将采用字典内容进行回答"),
+                    "timing": total_ms,
+                }
                 yield {
                     "type": "token",
                     "text": md,
@@ -121,10 +130,6 @@ class RagService:
                     "source": "dict",
                 }
 
-                total_ms = round(
-                    (time.perf_counter() - total_start) * 1000,
-                    2,
-                )
                 yield {
                     "type": "debug",
                     "query_ms": 0,
@@ -142,7 +147,7 @@ class RagService:
                 yield {
                     "type": "trace",
                     "stage": "字典",
-                    "message": ("未命中关键字，我将继续查询知识库"),
+                    "message": ("未命中关键字,我将继续查询知识库"),
                     "timing": total_ms,
                 }
 

@@ -968,7 +968,7 @@ class RagEngine:
         yield {
             "type": "trace",
             "stage": "回答",
-            "message": "我正在阅读理解相关资料，准备回答用户问题",
+            "message": f"我正在阅读理解相关资料({len(context)}),准备回答用户问题",
             "timing": 0,
         }
         stream = stream_with_usage(settings.rag_llm, final_prompt, self.usage, self)
