@@ -34,6 +34,11 @@ import jieba  # noqa: E402
 logging.set_verbosity_error()
 
 
+pangu_no_think = ""
+if "pangu" in settings.llm_model.lower():
+    pangu_no_think = "\n/no_think"
+
+
 class QueryMode(Enum):
     NORMAL = "normal"
     QUOTED = "quoted"
@@ -279,44 +284,51 @@ class QuestionNavigator:
 
             用户：
             {question}
+
+            {pangu_no_think}
         """)
 
         text = None
+        response = None
         try:
-            if "deepseek" in str(self.llm._client.base_url).lower():
-                response = self.llm.complete(
-                    prompt,
-                    response_format={"type": "json_object"},
-                )
-            else:
-                response = self.llm.complete(
-                    prompt,
-                    response_format={
-                        "type": "json_schema",
-                        "json_schema": {
-                            "name": "query_analysis",
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "question_type": {
-                                        "type": "string",
-                                        "enum": ["RAG", "CHAT", "INVALID"],
-                                    },
-                                    "retrieval_query": {"type": "string"},
-                                    "presentation_intent": {"type": "string"},
-                                    "user_intent": {"type": "string"},
-                                },
-                                "required": [
-                                    "question_type",
-                                    "retrieval_query",
-                                    "presentation_intent",
-                                    "user_intent",
-                                ],
-                                "additionalProperties": False,
-                            },
-                        },
-                    },
-                )
+            response = self.llm.complete(
+                prompt,
+                response_format={"type": "json_object"},
+            )
+            # if "deepseek" in str(self.llm._client.base_url).lower():
+            #     response = self.llm.complete(
+            #         prompt,
+            #         response_format={"type": "json_object"},
+            #     )
+            # else:
+            #     response = self.llm.complete(
+            #         prompt,
+            #         response_format={
+            #             "type": "json_schema",
+            #             "json_schema": {
+            #                 "name": "query_analysis",
+            #                 "schema": {
+            #                     "type": "object",
+            #                     "properties": {
+            #                         "question_type": {
+            #                             "type": "string",
+            #                             "enum": ["RAG", "CHAT", "INVALID"],
+            #                         },
+            #                         "retrieval_query": {"type": "string"},
+            #                         "presentation_intent": {"type": "string"},
+            #                         "user_intent": {"type": "string"},
+            #                     },
+            #                     "required": [
+            #                         "question_type",
+            #                         "retrieval_query",
+            #                         "presentation_intent",
+            #                         "user_intent",
+            #                     ],
+            #                     "additionalProperties": False,
+            #                 },
+            #             },
+            #         },
+            #     )
             usage, source = engine.extract_or_estimate_usage(
                 response,
                 self.llm,
@@ -343,7 +355,7 @@ class QuestionNavigator:
         except Exception as e:
             log(f"[QueryAnalyzeError] {e}")
             print(traceback.format_exc())
-            if response:
+            if response is not None:
                 print(response)
 
             # fallback to RAG, if query rewrite failed
@@ -961,6 +973,8 @@ class RagEngine:
             禁止使用外部知识。
             禁止寒暄。
             直接输出结论。
+
+            {pangu_no_think}
             """)
 
         # final generate
